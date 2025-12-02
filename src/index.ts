@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import prisma from "./config/bdd";
+import userRouter from "./routes/userRoutes";
 
 dotenv.config();
 
@@ -20,6 +21,10 @@ app.get("/health", async (req, res) => {
         res.status(500).json({ status: "error", database: "disconnected" });
     }
 });
+
+app.use(express.json());
+
+app.use("/api/users", userRouter);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
