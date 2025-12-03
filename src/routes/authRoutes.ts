@@ -6,6 +6,7 @@ import {
     completeLinkCode,
     verifyLinkCode,
     loginUser,
+    setPassword,
 } from "../controllers/authController";
 
 const authRouter = Router();
@@ -28,6 +29,9 @@ authRouter.get("/link/verify/:code", verifyLinkCode);
 // ======================================
 
 authRouter.post("/login", loginUser);
+
+// Définir le mot de passe (après /link, avec setupToken)
+authRouter.post("/set-password", setPassword);
 
 
 // ===========================================

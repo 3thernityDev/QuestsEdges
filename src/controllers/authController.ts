@@ -13,12 +13,20 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // Stockage temporaire des codes de liaison (en production, utiliser Redis)
 const linkCodes = new Map<string, { createdAt: Date; expiresAt: Date }>();
 
-// Nettoyer les codes expirés toutes les minutes
+// Stockage temporaire des tokens de setup password (10 min d'expiration)
+const setupTokens = new Map<string, { userId: number; expiresAt: Date }>();
+
+// Nettoyer les codes et tokens expirés toutes les minutes
 setInterval(() => {
     const now = new Date();
     for (const [code, data] of linkCodes.entries()) {
         if (now > data.expiresAt) {
             linkCodes.delete(code);
+        }
+    }
+    for (const [token, data] of setupTokens.entries()) {
+        if (now > data.expiresAt) {
+            setupTokens.delete(token);
         }
     }
 }, 60000);
@@ -112,9 +120,21 @@ export const completeLinkCode = async (
             { expiresIn: "7d" }
         );
 
+        // Si l'utilisateur n'a pas de mot de passe, générer un setupToken
+        let setupToken: string | undefined;
+        if (!user.password) {
+            setupToken = crypto.randomBytes(32).toString("hex");
+            setupTokens.set(setupToken, {
+                userId: user.id,
+                expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+            });
+        }
+
         res.status(200).json({
             message: "Compte lié avec succès",
             token,
+            setupToken, // Inclus seulement si l'utilisateur doit créer son mdp
+            needsPassword: !user.password,
             user: {
                 id: user.id,
                 username: user.username,
@@ -204,6 +224,91 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     } catch (error) {
         res.status(500).json({
             message: "Erreur lors de l'authentification",
+            error: (error as Error).message,
+        });
+    }
+};
+
+// ==================================
+// ========= SET PASSWORD ===========
+// ==================================
+
+// POST /api/auth/set-password - Définir le mot de passe (première fois après /link)
+export const setPassword = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const { setupToken, password, email } = req.body;
+
+        // Validation des données
+        if (!setupToken || !password) {
+            res.status(400).json({
+                message: "Données manquantes: setupToken et password requis",
+            });
+            return;
+        }
+
+        // Vérifier le setupToken
+        const tokenData = setupTokens.get(setupToken);
+        if (!tokenData) {
+            res.status(401).json({
+                message: "Token invalide ou expiré. Veuillez refaire /link en jeu.",
+            });
+            return;
+        }
+
+        // Vérifier l'expiration
+        if (new Date() > tokenData.expiresAt) {
+            setupTokens.delete(setupToken);
+            res.status(410).json({
+                message: "Token expiré. Veuillez refaire /link en jeu.",
+            });
+            return;
+        }
+
+        // Validation du mot de passe (minimum 8 caractères)
+        if (password.length < 8) {
+            res.status(400).json({
+                message: "Le mot de passe doit contenir au moins 8 caractères",
+            });
+            return;
+        }
+
+        // Supprimer le token (usage unique)
+        setupTokens.delete(setupToken);
+
+        // Mettre à jour l'utilisateur avec le mot de passe et l'email
+        const updateData: { password: string; email?: string } = { password };
+        if (email) {
+            updateData.email = email;
+        }
+
+        const user = await prisma.user.update({
+            where: { id: tokenData.userId },
+            data: updateData,
+        });
+
+        // Générer un nouveau JWT
+        const token = jwt.sign(
+            { userId: user.id, role: user.role },
+            process.env.JWT_SECRET!,
+            { expiresIn: "7d" }
+        );
+
+        res.status(200).json({
+            message: "Mot de passe créé avec succès",
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Erreur lors de la création du mot de passe",
             error: (error as Error).message,
         });
     }
