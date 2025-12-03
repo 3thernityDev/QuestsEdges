@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../generated/prisma/client.js";
+import bcrypt from "bcrypt";
 
 const adapter = new PrismaMariaDb({
     host: process.env.DATABASE_HOST,
@@ -10,6 +11,34 @@ const adapter = new PrismaMariaDb({
     connectionLimit: 5,
 });
 
-const prisma = new PrismaClient({ adapter });
+const prismaBase = new PrismaClient({ adapter });
+
+const prisma = prismaBase.$extends({
+    query: {
+        user: {
+            async create({ args, query }) {
+                if (args.data.password) {
+                    args.data.password = await bcrypt.hash(
+                        args.data.password,
+                        10
+                    );
+                }
+                return query(args);
+            },
+            async update({ args, query }) {
+                if (
+                    args.data.password &&
+                    typeof args.data.password === "string"
+                ) {
+                    args.data.password = await bcrypt.hash(
+                        args.data.password,
+                        10
+                    );
+                }
+                return query(args);
+            },
+        },
+    },
+});
 
 export default prisma;

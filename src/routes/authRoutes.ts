@@ -5,6 +5,7 @@ import {
     generateLinkCode,
     completeLinkCode,
     verifyLinkCode,
+    loginUser,
 } from "../controllers/authController";
 
 const authRouter = Router();
@@ -21,6 +22,13 @@ authRouter.post("/link/complete", completeLinkCode);
 
 // Vérifie si un code est valide (optionnel)
 authRouter.get("/link/verify/:code", verifyLinkCode);
+
+// ======================================
+// ========= EMAIL/PASSWORD AUTH ========
+// ======================================
+
+authRouter.post("/login", loginUser);
+
 
 // ===========================================
 // ========== MICROSOFT OAUTH ================

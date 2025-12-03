@@ -2,12 +2,13 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import prisma from "../config/bdd";
+import bcrypt from "bcrypt";
 
 // Configuration OAuth Microsoft
 const MICROSOFT_CLIENT_ID = process.env.AZURE_CLIENT_ID!;
 const MICROSOFT_CLIENT_SECRET = process.env.AZURE_SECRET!;
 const REDIRECT_URI = "http://localhost:3000/api/auth/microsoft/callback";
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Stockage temporaire des codes de liaison (en production, utiliser Redis)
 const linkCodes = new Map<string, { createdAt: Date; expiresAt: Date }>();
@@ -27,22 +28,26 @@ setInterval(() => {
 // ===========================================
 
 // POST /api/auth/link/generate - Génère un code de liaison
-export const generateLinkCode = async (req: Request, res: Response): Promise<void> => {
+export const generateLinkCode = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
     try {
         // Générer un code aléatoire de 6 caractères (majuscules + chiffres)
         const code = crypto.randomBytes(3).toString("hex").toUpperCase();
-        
+
         // Stocker le code avec une expiration de 5 minutes
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes
-        
+
         linkCodes.set(code, { createdAt: now, expiresAt });
-        
+
         res.status(200).json({
             message: "Code de liaison généré",
             code,
             expiresIn: "5 minutes",
-            instruction: "Tapez /link " + code + " en jeu pour lier votre compte",
+            instruction:
+                "Tapez /link " + code + " en jeu pour lier votre compte",
         });
     } catch (error) {
         res.status(500).json({
@@ -53,36 +58,39 @@ export const generateLinkCode = async (req: Request, res: Response): Promise<voi
 };
 
 // POST /api/auth/link/complete - Le plugin valide le code (appelé par le plugin Minecraft)
-export const completeLinkCode = async (req: Request, res: Response): Promise<void> => {
+export const completeLinkCode = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
     try {
         const { code, uuid_mc, username } = req.body;
-        
+
         // Validation des données
         if (!code || !uuid_mc || !username) {
-            res.status(400).json({ 
-                message: "Données manquantes: code, uuid_mc et username requis" 
+            res.status(400).json({
+                message: "Données manquantes: code, uuid_mc et username requis",
             });
             return;
         }
-        
+
         // Vérifier que le code existe
         const linkData = linkCodes.get(code.toUpperCase());
-        
+
         if (!linkData) {
             res.status(404).json({ message: "Code invalide ou expiré" });
             return;
         }
-        
+
         // Vérifier que le code n'est pas expiré
         if (new Date() > linkData.expiresAt) {
             linkCodes.delete(code.toUpperCase());
             res.status(410).json({ message: "Code expiré" });
             return;
         }
-        
+
         // Supprimer le code (usage unique)
         linkCodes.delete(code.toUpperCase());
-        
+
         // Créer ou mettre à jour l'utilisateur
         const user = await prisma.user.upsert({
             where: { uuid_mc },
@@ -96,14 +104,14 @@ export const completeLinkCode = async (req: Request, res: Response): Promise<voi
                 email: `${uuid_mc}@minecraft.local`, // Email placeholder
             },
         });
-        
+
         // Générer le JWT
         const token = jwt.sign(
             { userId: user.id, role: user.role },
-            JWT_SECRET,
+            process.env.JWT_SECRET!,
             { expiresIn: "7d" }
         );
-        
+
         res.status(200).json({
             message: "Compte lié avec succès",
             token,
@@ -123,20 +131,82 @@ export const completeLinkCode = async (req: Request, res: Response): Promise<voi
 };
 
 // GET /api/auth/link/verify/:code - Vérifie si un code est valide (optionnel)
-export const verifyLinkCode = async (req: Request, res: Response): Promise<void> => {
+export const verifyLinkCode = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
     const { code } = req.params;
-    
+
     const linkData = linkCodes.get(code.toUpperCase());
-    
+
     if (!linkData || new Date() > linkData.expiresAt) {
-        res.status(404).json({ valid: false, message: "Code invalide ou expiré" });
+        res.status(404).json({
+            valid: false,
+            message: "Code invalide ou expiré",
+        });
         return;
     }
-    
-    res.status(200).json({ 
-        valid: true, 
-        expiresAt: linkData.expiresAt 
+
+    res.status(200).json({
+        valid: true,
+        expiresAt: linkData.expiresAt,
     });
+};
+
+// ========================
+// ========= LOGIN ========
+// ========================
+
+export const loginUser = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email, password } = req.body;
+
+        // Validation des données
+        if (!email || !password) {
+            res.status(400).json({
+                message: "Données manquantes: email et password requis",
+            });
+            return;
+        }
+
+        // Verifier les informations d'identification
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || !user.password) {
+            res.status(401).json({
+                message: "Email ou mot de passe incorrect",
+            });
+            return;
+        }
+
+        // Verifier le mot de passe
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            res.status(401).json({
+                message: "Email ou mot de passe incorrect",
+            });
+            return;
+        }
+        // Générer le JWT
+        const token = jwt.sign(
+            { userId: user.id, role: user.role },
+            process.env.JWT_SECRET!,
+            { expiresIn: "7d" }
+        );
+        res.status(200).json({
+            message: "Authentification réussie",
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Erreur lors de l'authentification",
+            error: (error as Error).message,
+        });
+    }
 };
 
 // ======================================================
