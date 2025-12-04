@@ -44,7 +44,6 @@ model User {
   id                         Int                 @id @default(autoincrement())
   username                   String              @unique @db.VarChar(50)
   email                      String              @unique @db.VarChar(100)
-  password                   String?              @db.VarChar(255)
   uuid_mc                    String              @unique @db.VarChar(36)
   role                       Role                @default(user)
   createdAt                  DateTime            @default(now())
@@ -53,7 +52,6 @@ model User {
   total_xp                   Int                 @default(0)
   total_points               Int                 @default(0)
   total_challenges_completed Int                 @default(0)
-  skin_url                   String?             @db.VarChar(255)
   challenges                 Challenges[]
   acceptedChallenges         UsersOnChallenges[]
   ChallengeProgress          ChallengeProgress[]
