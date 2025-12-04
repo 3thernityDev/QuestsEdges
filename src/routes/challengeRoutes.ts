@@ -7,7 +7,6 @@ import {
     updateChallenge,
     joinChallenge,
 } from "../controllers/challengesController";
-import { is } from "zod/v4/locales";
 import { isAdmin, isAuthenticated } from "../middlewares/authMiddleware";
 
 const challengeRouter = Router();
