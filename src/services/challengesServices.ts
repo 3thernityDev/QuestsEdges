@@ -40,3 +40,9 @@ export const joinChallengeService = async (userId: number, challengeId: number) 
         data: { userId, challengeId },
     });
 };
+
+export const deleteChallengeService = async (id: number) => {
+    return prisma.challenges.delete({
+        where: { id },
+    });
+};

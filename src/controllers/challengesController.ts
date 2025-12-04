@@ -6,6 +6,7 @@ import {
     createChallengeService,
     updateChallengeService,
     joinChallengeService,
+    deleteChallengeService,
 } from "../services/challengesServices";
 
 import {
@@ -167,6 +168,33 @@ export const joinChallenge = async (
         }
         res.status(500).json({
             message: "Erreur lors de la participation au challenge",
+            error: (error as Error).message,
+        });
+    }
+};
+
+export const deleteChallenge = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) {
+            res.status(400).json({ message: "ID de challenge invalide" });
+            return;
+        }
+
+        const challenge = await findChallengeById(id);
+        if (!challenge) {
+            res.status(404).json({ message: "Challenge non trouvé" });
+            return;
+        }
+
+        await deleteChallengeService(id);
+        res.status(200).json({ message: "Challenge supprimé" });
+    } catch (error) {
+        res.status(500).json({
+            message: "Erreur lors de la suppression du challenge",
             error: (error as Error).message,
         });
     }
