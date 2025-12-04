@@ -111,6 +111,7 @@ model ChallengeTasks {
   actionId    Int        @map("action_id")
   action      Actions    @relation(fields: [actionId], references: [id], onDelete: Cascade)
   quantity    Int        @default(1)
+  parameters  Json?      // Paramètres spécifiques à la tâche (ex: { "block": "diamond_ore" })
 
   progress ChallengeProgress[]
 
