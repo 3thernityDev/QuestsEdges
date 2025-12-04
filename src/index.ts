@@ -4,6 +4,7 @@ import prisma from "./config/bdd";
 import userRouter from "./routes/userRoutes";
 import authRouter from "./routes/authRoutes";
 import challengeRouter from "./routes/challengeRoutes";
+import actionRouter from "./routes/actionRoutes";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use(express.json());
 app.use("/api/users", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/challenges", challengeRouter);
+app.use("/api/actions", actionRouter);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
