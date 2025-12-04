@@ -16,7 +16,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 // GET /api/auth/microsoft - Redirige vers Microsoft
 export const getMicrosoftAuthUrl = (req: Request, res: Response): void => {
-    const scope = "XboxLive.signin offline_access";
+    const scope = "XboxLive.signin offline_access openid email profile";
 
     const authUrl =
         `https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?` +
@@ -45,6 +45,9 @@ export const microsoftCallback = async (
         // 1. Échanger le code contre un access token Microsoft
         const microsoftToken = await getMicrosoftToken(code);
 
+        // Extraire l'email depuis l'ID token (JWT)
+        const emailFromToken = extractEmailFromIdToken(microsoftToken.id_token);
+
         // 2. Authentifier avec Xbox Live
         const xboxToken = await getXboxLiveToken(microsoftToken.access_token);
 
@@ -59,12 +62,14 @@ export const microsoftCallback = async (
             where: { uuid_mc: minecraftProfile.id },
             update: {
                 username: minecraftProfile.name,
+                email: emailFromToken || undefined, // Met à jour l'email si disponible
                 last_login: new Date(),
             },
             create: {
                 uuid_mc: minecraftProfile.id,
                 username: minecraftProfile.name,
-                email: `${minecraftProfile.id}@minecraft.local`, // Email placeholder
+                email:
+                    emailFromToken || `${minecraftProfile.id}@minecraft.local`,
             },
         });
 
@@ -134,10 +139,23 @@ export const logout = (req: Request, res: Response): void => {
 // ========== FONCTIONS UTILITAIRES OAUTH ===============
 // ======================================================
 
+// Extrait l'email depuis l'ID token Microsoft (JWT)
+function extractEmailFromIdToken(idToken: string): string | null {
+    try {
+        // Le JWT est composé de 3 parties séparées par des points
+        const payload = idToken.split(".")[1];
+        // Décoder le payload base64
+        const decoded = JSON.parse(Buffer.from(payload, "base64").toString());
+        return decoded.email || null;
+    } catch {
+        return null;
+    }
+}
+
 // Échange le code contre un token Microsoft
 async function getMicrosoftToken(
     code: string
-): Promise<{ access_token: string }> {
+): Promise<{ access_token: string; id_token: string }> {
     const response = await fetch(
         "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
         {
@@ -149,7 +167,7 @@ async function getMicrosoftToken(
                 code: code,
                 redirect_uri: REDIRECT_URI,
                 grant_type: "authorization_code",
-                scope: "XboxLive.signin offline_access",
+                scope: "XboxLive.signin offline_access openid email profile",
             }),
         }
     );
