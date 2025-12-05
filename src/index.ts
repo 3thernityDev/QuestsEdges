@@ -5,6 +5,7 @@ import userRouter from "./routes/userRoutes";
 import authRouter from "./routes/authRoutes";
 import challengeRouter from "./routes/challengeRoutes";
 import actionRouter from "./routes/actionRoutes";
+import progressRouter from "./routes/progressRoutes";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use("/api/users", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/challenges", challengeRouter);
 app.use("/api/actions", actionRouter);
+app.use("/api/progress", progressRouter);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

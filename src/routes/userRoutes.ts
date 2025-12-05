@@ -7,6 +7,11 @@ import {
     updateUser,
 } from "../controllers/userController";
 import { isAdmin, isAuthenticated } from "../middlewares/authMiddleware";
+import {
+    getUserProgress,
+    getUserChallengeProgress,
+    resetUserChallengeProgress,
+} from "../controllers/progressController";
 
 const userRouter = Router();
 
@@ -24,5 +29,24 @@ userRouter.put("/id/:id", isAuthenticated, isAdmin, updateUser);
 
 // Supprimer un utilisateur par son ID
 userRouter.delete("/id/:id", isAuthenticated, isAdmin, deleteUser);
+
+// === PROGRESSION ===
+// GET /users/:userId/progress - Toute la progression d'un user
+userRouter.get("/:userId/progress", isAuthenticated, getUserProgress);
+
+// GET /users/:userId/challenges/:challengeId/progress - Progression sur un challenge
+userRouter.get(
+    "/:userId/challenges/:challengeId/progress",
+    isAuthenticated,
+    getUserChallengeProgress
+);
+
+// DELETE /users/:userId/challenges/:challengeId/progress - Reset progression (admin)
+userRouter.delete(
+    "/:userId/challenges/:challengeId/progress",
+    isAuthenticated,
+    isAdmin,
+    resetUserChallengeProgress
+);
 
 export default userRouter;

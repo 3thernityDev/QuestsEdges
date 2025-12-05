@@ -4,3 +4,4 @@ dist/
 dist-dev/
 
 /src/generated/prisma
+insomnia_msp2.json
