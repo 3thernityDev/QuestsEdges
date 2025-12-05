@@ -135,6 +135,54 @@ export const logout = (req: Request, res: Response): void => {
     res.status(200).json({ message: "Déconnexion réussie" });
 };
 
+// POST /api/auth/system-token - Génère un token pour le système (plugin MC)
+export const generateSystemToken = async (req: Request, res: Response): Promise<void> => {
+    try {
+        // UUID système fixe (ne correspond à aucun vrai joueur MC)
+        const SYSTEM_UUID = "00000000-0000-0000-0000-000000000000";
+        const SYSTEM_USERNAME = "MC_SYSTEM";
+        const SYSTEM_EMAIL = "system@mc-challenges.local";
+
+        // Créer ou récupérer l'utilisateur système
+        const systemUser = await prisma.user.upsert({
+            where: { uuid_mc: SYSTEM_UUID },
+            update: {
+                role: "sys",
+            },
+            create: {
+                uuid_mc: SYSTEM_UUID,
+                username: SYSTEM_USERNAME,
+                email: SYSTEM_EMAIL,
+                role: "sys",
+            },
+        });
+
+        // Générer un JWT longue durée (1 an)
+        const token = jwt.sign(
+            { userId: systemUser.id, role: systemUser.role },
+            process.env.JWT_SECRET!,
+            { expiresIn: "365d" }
+        );
+
+        res.status(200).json({
+            message: "Token système généré avec succès",
+            token,
+            expiresIn: "365 jours",
+            user: {
+                id: systemUser.id,
+                username: systemUser.username,
+                role: systemUser.role,
+            },
+        });
+    } catch (error) {
+        console.error("Erreur génération token système:", error);
+        res.status(500).json({
+            message: "Erreur lors de la génération du token système",
+            error: (error as Error).message,
+        });
+    }
+};
+
 // ======================================================
 // ========== FONCTIONS UTILITAIRES OAUTH ===============
 // ======================================================

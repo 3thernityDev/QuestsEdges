@@ -62,3 +62,41 @@ export const isAdmin = (
 
     next();
 };
+
+// Middleware: Vérifie si c'est le système (plugin MC)
+export const isSystem = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void => {
+    if (!req.user) {
+        res.status(401).json({ message: "Non authentifié" });
+        return;
+    }
+
+    if (req.user.role !== "sys") {
+        res.status(403).json({ message: "Accès refusé: système requis" });
+        return;
+    }
+
+    next();
+};
+
+// Middleware: Vérifie si admin OU système
+export const isAdminOrSystem = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void => {
+    if (!req.user) {
+        res.status(401).json({ message: "Non authentifié" });
+        return;
+    }
+
+    if (req.user.role !== "admin" && req.user.role !== "sys") {
+        res.status(403).json({ message: "Accès refusé: admin ou système requis" });
+        return;
+    }
+
+    next();
+};

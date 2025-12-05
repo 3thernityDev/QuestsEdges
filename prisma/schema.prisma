@@ -38,6 +38,7 @@ enum Role {
   user
   admin
   moderator
+  sys
 }
 
 model User {

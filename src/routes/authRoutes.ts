@@ -4,8 +4,9 @@ import {
     microsoftCallback,
     getMe,
     logout,
+    generateSystemToken,
 } from "../controllers/authController";
-import { isAuthenticated } from "../middlewares/authMiddleware";
+import { isAuthenticated, isAdmin } from "../middlewares/authMiddleware";
 
 const authRouter = Router();
 
@@ -28,5 +29,12 @@ authRouter.get("/me", isAuthenticated, getMe);
 
 // Déconnexion
 authRouter.post("/logout", logout);
+
+// ===========================================
+// ========== SYSTEM TOKEN (ADMIN) ===========
+// ===========================================
+
+// Génère un token pour le plugin MC (admin uniquement)
+authRouter.post("/system-token", isAuthenticated, isAdmin, generateSystemToken);
 
 export default authRouter;
