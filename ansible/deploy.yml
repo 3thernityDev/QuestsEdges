@@ -1,0 +1,74 @@
+---
+# Playbook Ansible pour deployer QuestsEdges API sur le VPS
+# Usage: ansible-playbook ansible/deploy.yml -i "host," -u user -e "release_tag=v1.0.0"
+
+- name: Deploy QuestsEdges API
+  hosts: all
+  become: yes
+  vars:
+    app_name: questsedges-api
+    app_dir: /home/srvPod/QuestsEdges
+    repo_url: https://github.com/3thernityDev/QuestsEdges.git
+    container_name: api
+
+  tasks:
+    - name: Afficher la version deployee
+      debug:
+        msg: "Deploiement de la version {{ release_tag }}"
+
+    - name: Pull des derniers changements depuis GitHub
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ release_tag }}"
+        force: yes
+      become_user: srvPod
+
+    - name: Copier le fichier .env (s'il n'existe pas deja)
+      stat:
+        path: "{{ app_dir }}/.env"
+      register: env_file
+
+    - name: Arreter le conteneur API
+      command: podman stop {{ container_name }}
+      ignore_errors: yes
+
+    - name: Installer les dependances dans le conteneur
+      command: podman exec {{ container_name }} npm ci --production
+      become_user: srvPod
+
+    - name: Generer le client Prisma
+      command: podman exec {{ container_name }} npx prisma generate
+      become_user: srvPod
+
+    - name: Appliquer les migrations de base de donnees
+      command: podman exec {{ container_name }} npx prisma migrate deploy
+      become_user: srvPod
+
+    - name: Rebuild TypeScript
+      command: podman exec {{ container_name }} npm run build
+      become_user: srvPod
+
+    - name: Redemarrer le conteneur API
+      command: podman restart {{ container_name }}
+      become_user: srvPod
+
+    - name: Attendre que l'API soit prete
+      wait_for:
+        port: 3000
+        host: localhost
+        delay: 5
+        timeout: 60
+
+    - name: Verifier le health check
+      uri:
+        url: http://localhost:3000/health
+        method: GET
+        status_code: 200
+      register: health_check
+      retries: 3
+      delay: 5
+
+    - name: Afficher le resultat du health check
+      debug:
+        msg: "API deployee avec succes - Status: {{ health_check.json.status }}"

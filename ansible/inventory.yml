@@ -1,0 +1,12 @@
+---
+# Inventaire Ansible pour les environnements
+# Note: En CI/CD, l'host est passe dynamiquement via -i "host,"
+
+all:
+  children:
+    production:
+      hosts:
+        vps:
+          ansible_host: "{{ lookup('env', 'VPS_HOST') | default('localhost') }}"
+          ansible_user: "{{ lookup('env', 'VPS_USER') | default('srvPod') }}"
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa

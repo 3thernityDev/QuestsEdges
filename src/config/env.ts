@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Schema de validation des variables d'environnement
-const envSchema = z.object({
+export const envSchema = z.object({
     // Serveur
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     PORT: z.string().default("3000"),

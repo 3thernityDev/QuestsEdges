@@ -1,0 +1,166 @@
+name: CI/CD - Main Branch (Release & Deploy)
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Tests & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: TypeScript check
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test
+        env:
+          NODE_ENV: test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          TAG="v${VERSION}-${COMMIT_SHORT}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Release version: ${TAG}"
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create release archive
+        run: |
+          tar -czvf questsedges-api-${{ steps.version.outputs.tag }}.tar.gz \
+            dist/ \
+            prisma/ \
+            package.json \
+            package-lock.json
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
+          body: |
+            ## QuestsEdges API Release
+            
+            **Version:** ${{ steps.version.outputs.version }}
+            **Commit:** ${{ github.sha }}
+            
+            ### Installation
+            ```bash
+            tar -xzvf questsedges-api-${{ steps.version.outputs.tag }}.tar.gz
+            npm ci --production
+            npx prisma migrate deploy
+            npm start
+            ```
+          files: questsedges-api-${{ steps.version.outputs.tag }}.tar.gz
+          draft: false
+          prerelease: false
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: release
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Ansible
+        run: |
+          pip install ansible
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook ansible/deploy.yml \
+            -i "${{ secrets.VPS_HOST }}," \
+            -u ${{ secrets.VPS_USER }} \
+            --private-key ~/.ssh/id_rsa \
+            -e "release_tag=${{ needs.release.outputs.tag }}" \
+            -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no'"
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "false"
