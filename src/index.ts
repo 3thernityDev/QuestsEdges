@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import prisma from "./config/bdd";
+import corsMiddleware from "./config/cors";
 import userRouter from "./routes/userRoutes";
 import authRouter from "./routes/authRoutes";
 import challengeRouter from "./routes/challengeRoutes";
@@ -13,6 +14,9 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// CORS
+app.use(corsMiddleware);
 
 app.get("/", (req, res) => {
     res.send("API MSP2 running !");
