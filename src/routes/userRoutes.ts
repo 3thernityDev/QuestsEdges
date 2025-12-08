@@ -12,6 +12,11 @@ import {
     getUserChallengeProgress,
     resetUserChallengeProgress,
 } from "../controllers/progressController";
+import {
+    getUserBadges,
+    awardBadgeToUser,
+    revokeBadgeFromUser,
+} from "../controllers/badgesController";
 
 const userRouter = Router();
 
@@ -47,6 +52,26 @@ userRouter.delete(
     isAuthenticated,
     isAdmin,
     resetUserChallengeProgress
+);
+
+// === BADGES ===
+// GET /users/:userId/badges - Badges d'un utilisateur
+userRouter.get("/:userId/badges", isAuthenticated, getUserBadges);
+
+// POST /users/:userId/badges/:badgeId - Attribuer un badge (admin)
+userRouter.post(
+    "/:userId/badges/:badgeId",
+    isAuthenticated,
+    isAdmin,
+    awardBadgeToUser
+);
+
+// DELETE /users/:userId/badges/:badgeId - Retirer un badge (admin)
+userRouter.delete(
+    "/:userId/badges/:badgeId",
+    isAuthenticated,
+    isAdmin,
+    revokeBadgeFromUser
 );
 
 export default userRouter;
