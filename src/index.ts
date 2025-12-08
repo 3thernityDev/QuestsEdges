@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import helmet from "helmet";
 import prisma from "./config/bdd";
 import corsMiddleware from "./config/cors";
 import userRouter from "./routes/userRoutes";
@@ -14,6 +15,9 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Security headers
+app.use(helmet());
 
 // CORS
 app.use(corsMiddleware);
