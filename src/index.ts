@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import prisma from "./config/bdd";
 import corsMiddleware from "./config/cors";
+import { globalLimiter } from "./config/rateLimit";
 import userRouter from "./routes/userRoutes";
 import authRouter from "./routes/authRoutes";
 import challengeRouter from "./routes/challengeRoutes";
@@ -21,6 +22,9 @@ app.use(helmet());
 
 // CORS
 app.use(corsMiddleware);
+
+// Rate limiting global
+app.use(globalLimiter);
 
 app.get("/", (req, res) => {
     res.send("API MSP2 running !");

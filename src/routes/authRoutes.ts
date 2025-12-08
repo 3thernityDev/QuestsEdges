@@ -7,6 +7,7 @@ import {
     generateSystemToken,
 } from "../controllers/authController";
 import { isAuthenticated, isAdmin } from "../middlewares/authMiddleware";
+import { authLimiter } from "../config/rateLimit";
 
 const authRouter = Router();
 
@@ -15,10 +16,10 @@ const authRouter = Router();
 // ===========================================
 
 // Redirige vers la page de login Microsoft
-authRouter.get("/microsoft", getMicrosoftAuthUrl);
+authRouter.get("/microsoft", authLimiter, getMicrosoftAuthUrl);
 
-// Callback après authentification Microsoft
-authRouter.get("/microsoft/callback", microsoftCallback);
+// Callback apres authentification Microsoft
+authRouter.get("/microsoft/callback", authLimiter, microsoftCallback);
 
 // ===========================================
 // ========== USER SESSION ===================
