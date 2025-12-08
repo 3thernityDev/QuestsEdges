@@ -4,6 +4,7 @@ import helmet from "helmet";
 import prisma from "./config/bdd";
 import corsMiddleware from "./config/cors";
 import { globalLimiter } from "./config/rateLimit";
+import { errorHandler, notFoundHandler } from "./middlewares/errorMiddleware";
 import userRouter from "./routes/userRoutes";
 import authRouter from "./routes/authRoutes";
 import challengeRouter from "./routes/challengeRoutes";
@@ -27,7 +28,7 @@ app.use(corsMiddleware);
 app.use(globalLimiter);
 
 app.get("/", (req, res) => {
-    res.send("API MSP2 running !");
+    res.send("API QuestsEdges running !");
 });
 
 // Route de test pour la DB
@@ -49,6 +50,12 @@ app.use("/api/actions", actionRouter);
 app.use("/api/progress", progressRouter);
 app.use("/api/badges", badgeRouter);
 app.use("/api/notifications", notificationRouter);
+
+// Gestion des routes non trouvees (404)
+app.use(notFoundHandler);
+
+// Gestion globale des erreurs
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
