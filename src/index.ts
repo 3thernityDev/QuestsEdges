@@ -1,9 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
+dotenv.config();
+
 import helmet from "helmet";
 import prisma from "./config/bdd";
 import corsMiddleware from "./config/cors";
 import { globalLimiter } from "./config/rateLimit";
+import { getEnv } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middlewares/errorMiddleware";
 import userRouter from "./routes/userRoutes";
 import authRouter from "./routes/authRoutes";
@@ -13,10 +16,11 @@ import progressRouter from "./routes/progressRoutes";
 import badgeRouter from "./routes/badgeRoutes";
 import notificationRouter from "./routes/notificationRoutes";
 
-dotenv.config();
+// Valider les variables d'environnement au demarrage
+const env = getEnv();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = env.PORT || 3000;
 
 // Security headers
 app.use(helmet());
