@@ -1,253 +1,243 @@
 name: CI/CD - Main Branch (Release & Deploy)
 
 on:
-  push:
-    branches:
-      - main
+    push:
+        branches:
+            - main
 
 permissions:
-  contents: write
+    contents: write
 
 jobs:
-  test:
-    name: Tests & Lint
-    runs-on: ubuntu-latest
+    test:
+        name: Tests & Lint
+        runs-on: ubuntu-latest
 
-    # Ajout du service MySQL pour permettre aux tests Prisma de fonctionner
-    services:
-      mysql:
-        image: mysql:8
-        ports:
-          - 3306:3306
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: ci
-          MYSQL_USER: ci
-          MYSQL_PASSWORD: ci
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
+            - name: Generate Prisma Client
+              run: npx prisma generate
+              env:
+                  DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
 
-      - name: Cache Prisma Client
-        uses: actions/cache@v4
-        with:
-          path: node_modules/.prisma
-          key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
+            - name: TypeScript check
+              run: npm run lint
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
-        env:
-          DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
+            - name: Run tests
+              run: npm run test
+              env:
+                  NODE_ENV: test
+                  DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
+                  JWT_SECRET: "ci-test-secret-key-minimum-32-characters"
+                  AZURE_CLIENT_ID: "ci-test-client-id"
+                  AZURE_SECRET: "ci-test-secret"
 
-      - name: TypeScript check
-        run: npm run lint
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        needs: test
 
-      - name: Run tests
-        run: npm run test
-        env:
-          NODE_ENV: test
-          DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
-          JWT_SECRET: "ci-test-secret-key-minimum-32-characters"
-          AZURE_CLIENT_ID: "ci-test-client-id"
-          AZURE_SECRET: "ci-test-secret"
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: test
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
+            - name: Generate Prisma Client
+              run: npx prisma generate
+              env:
+                  DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
+            - name: Build
+              run: npm run build
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
-        env:
-          DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
+            - name: Upload build artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dist
+                  path: dist/
+                  retention-days: 1
 
-      - name: Build
-        run: npm run build
+    release:
+        name: Prepare Release Archive
+        runs-on: ubuntu-latest
+        needs: build
+        outputs:
+            version: ${{ steps.version.outputs.version }}
+            tag: ${{ steps.version.outputs.tag }}
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-          retention-days: 1
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-  release:
-    name: Prepare Release Archive
-    runs-on: ubuntu-latest
-    needs: build
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      tag: ${{ steps.version.outputs.tag }}
+            - name: Get version from package.json
+              id: version
+              run: |
+                  VERSION=$(node -p "require('./package.json').version")
+                  TAG="v${VERSION}"
+                  echo "version=${VERSION}" >> $GITHUB_OUTPUT
+                  echo "tag=${TAG}" >> $GITHUB_OUTPUT
+                  echo "Release version: ${TAG}"
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+            - name: Download build artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: dist
+                  path: dist/
 
-      - name: Extract version from package.json
-        id: version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="v${VERSION}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+            - name: Create release archive
+              run: |
+                  tar -czvf questsedges-api-${{ steps.version.outputs.tag }}.tar.gz \
+                    dist/ \
+                    prisma/ \
+                    package.json \
+                    package-lock.json
 
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
+    deploy:
+        name: Deploy to VPS
+        runs-on: ubuntu-latest
+        needs: release
+        environment:
+            name: production
 
-      - name: Create release archive
-        run: |
-          ARCHIVE="questsedges-api-${{ steps.version.outputs.tag }}.tar.gz"
-          tar -czvf "$ARCHIVE" \
-            dist/ \
-            prisma/ \
-            package.json \
-            package-lock.json
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-      # Upload the .tar.gz as artifact (fix for deploy + GitHub release)
-      - name: Upload release archive
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-archive
-          path: questsedges-api-${{ steps.version.outputs.tag }}.tar.gz
+            - name: Setup Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
 
-  deploy:
-    name: Deploy to VPS
-    runs-on: ubuntu-latest
-    needs: release
-    environment:
-      name: production
+            - name: Install Ansible
+              run: |
+                  pip install ansible
 
-    steps:
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+            - name: Setup SSH key
+              run: |
+                  mkdir -p ~/.ssh
+                  echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+                  chmod 600 ~/.ssh/id_rsa
+                  ssh-keyscan -p ${{ secrets.VPS_SSH_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+              shell: /usr/bin/bash -e {0}
 
-      - name: Install Ansible
-        run: pip install ansible
+            - name: Write .env file from secret
+              run: |
+                  echo "$PROD_ENV_FILE" > ansible/.env.deploy
+              env:
+                  PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p ${{ secrets.VPS_SSH_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+            - name: Run Ansible Playbook
+              run: |
+                  ansible-playbook ansible/deploy.yml \
+                    -i "${{ secrets.VPS_HOST }}," \
+                    -u ${{ secrets.VPS_USER }} \
+                    --private-key ~/.ssh/id_rsa \
+                    -e "release_tag=${{ needs.release.outputs.tag }}" \
+                    -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no'" \
+                    -e "ansible_port=${{ secrets.VPS_SSH_PORT }}"
+              env:
+                  ANSIBLE_HOST_KEY_CHECKING: "false"
 
-      - name: Prepare .env file for deploy
-        run: echo "$PROD_ENV_FILE" > ansible/.env.deploy
-        env:
-          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+    verify:
+        name: Post-Deployment Verification
+        runs-on: ubuntu-latest
+        needs: [deploy, release]
+        environment:
+            name: production
 
-      # On envoie l'archive dessus via Ansible (playbook doit inclure une tâche "copy")
-      - name: Download archive for deployment
-        uses: actions/download-artifact@v4
-        with:
-          name: release-archive
-          path: ./release/
+        steps:
+            - name: Wait for service to stabilize
+              run: sleep 10
 
-      - name: Run Ansible Playbook
-        run: |
-          ansible-playbook ansible/deploy.yml \
-            -i "${{ secrets.VPS_HOST }}," \
-            -u ${{ secrets.VPS_USER }} \
-            --private-key ~/.ssh/id_rsa \
-            -e "release_tag=${{ needs.release.outputs.tag }}" \
-            -e "archive_path=./release" \
-            -e "ansible_port=${{ secrets.VPS_SSH_PORT }}" \
-            -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no'"
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "false"
+            - name: Health Check
+              run: |
+                  echo "Testing API health endpoint..."
+                  RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
+                    "https://${{ secrets.API_PUBLIC_URL }}/health" || echo "000")
 
-  verify:
-    name: Post-Deployment Verification
-    runs-on: ubuntu-latest
-    needs: [deploy, release]
-    environment:
-      name: production
+                  if [ "$RESPONSE" = "200" ]; then
+                    echo "[OK] Health check passed (HTTP $RESPONSE)"
+                  else
+                    echo "[FAIL] Health check failed (HTTP $RESPONSE)"
+                    exit 1
+                  fi
 
-    steps:
-      - name: Wait for service to start
-        run: sleep 10
+            - name: API Root Check
+              run: |
+                  echo "Testing API root endpoint..."
+                  RESPONSE=$(curl -s --max-time 30 "https://${{ secrets.API_PUBLIC_URL }}/")
 
-      - name: Health Check
-        run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
-            "https://${{ secrets.API_PUBLIC_URL }}/health" || echo "000")
-          if [ "$RESPONSE" != "200" ]; then exit 1; fi
+                  if echo "$RESPONSE" | grep -q "QuestsEdges"; then
+                    echo "[OK] API root check passed"
+                  else
+                    echo "[FAIL] API root check failed"
+                    echo "Response: $RESPONSE"
+                    exit 1
+                  fi
 
-      - name: API Root Check
-        run: |
-          RESPONSE=$(curl -s --max-time 30 "https://${{ secrets.API_PUBLIC_URL }}/")
-          echo "$RESPONSE" | grep -q "QuestsEdges" || exit 1
+            - name: Challenges Endpoint Check
+              run: |
+                  echo "Testing /api/challenges endpoint..."
+                  RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
+                    "https://${{ secrets.API_PUBLIC_URL }}/api/challenges")
 
-      - name: Challenges Endpoint Check
-        run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
-            "https://${{ secrets.API_PUBLIC_URL }}/api/challenges")
-          if [ "$RESPONSE" != "200" ]; then exit 1; fi
+                  if [ "$RESPONSE" = "200" ]; then
+                    echo "[OK] Challenges endpoint check passed (HTTP $RESPONSE)"
+                  else
+                    echo "[FAIL] Challenges endpoint check failed (HTTP $RESPONSE)"
+                    exit 1
+                  fi
 
-      - name: Done
-        run: echo "Deployment OK - Version ${{ needs.release.outputs.tag }}"
+            - name: Deployment verification complete
+              run: |
+                  echo "All post-deployment checks passed!"
+                  echo "API Version: ${{ needs.release.outputs.tag }}"
 
-  publish_release:
-    name: Publish GitHub Release
-    runs-on: ubuntu-latest
-    needs: [verify, release]
+    publish_release:
+        name: Publish GitHub Release
+        runs-on: ubuntu-latest
+        needs: [verify, release]
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-      - name: Download release archive
-        uses: actions/download-artifact@v4
-        with:
-          name: release-archive
-          path: ./
+            - name: Download release archive
+              uses: actions/download-artifact@v4
+              with:
+                  name: dist
+                  path: dist/
 
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ needs.release.outputs.tag }}
-          name: Release ${{ needs.release.outputs.tag }}
-          files: |
-            questsedges-api-${{ needs.release.outputs.tag }}.tar.gz
-          body: |
-            ## QuestsEdges API Release
-            **Version:** ${{ needs.release.outputs.version }}
-            **Commit:** ${{ github.sha }}
-          prerelease: false
+            - name: Publish GitHub Release
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: ${{ needs.release.outputs.tag }}
+                  name: Release ${{ needs.release.outputs.tag }}
+                  body: |
+                      ## QuestsEdges API Release
+                      **Version:** ${{ needs.release.outputs.version }}
+                      **Commit:** ${{ github.sha }}
+                  prerelease: false
