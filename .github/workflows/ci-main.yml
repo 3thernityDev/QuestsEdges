@@ -125,7 +125,6 @@ jobs:
               uses: actions/checkout@v4
 
             - name: Debug SSH secret
-              if: env.DEBUG_SSH == 'true'
               continue-on-error: true
               run: |
                   echo "Longueur du secret :"
@@ -151,7 +150,6 @@ jobs:
               shell: /usr/bin/bash -e {0}
 
             - name: Debug SSH secret
-              if: env.DEBUG_SSH == 'true'
               run: |
                   echo "Longueur du secret :"
                   echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" | wc -c
