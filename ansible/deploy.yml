@@ -24,6 +24,11 @@
       debug:
         msg: "Deploiement de la version {{ release_tag }}"
 
+    - name: Fetch all tags
+      command: git fetch --tags
+      args:
+        chdir: "{{ app_dir }}"
+
     - name: Pull des derniers changements depuis GitHub
       git:
         repo: "{{ repo_url }}"
