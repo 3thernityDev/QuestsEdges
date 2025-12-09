@@ -23,6 +23,14 @@
         force: yes
       become_user: srvPod
 
+
+    - name: Copier le fichier .env depuis le runner
+      copy:
+        content: "{{ lookup('env', 'PROD_ENV_FILE') }}"
+        dest: "{{ app_dir }}/.env"
+        owner: srvPod
+        mode: '0600'
+
     - name: Verifier si le fichier .env existe
       stat:
         path: "{{ app_dir }}/.env"
