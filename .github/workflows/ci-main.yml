@@ -170,6 +170,7 @@ jobs:
             --private-key ~/.ssh/id_rsa \
             -e "release_tag=${{ needs.release.outputs.tag }}" \
             -e "ansible_port=${{ secrets.VPS_SSH_PORT }}" \
-            -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no'"
+            -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no'" \
+            --become=false
         env:
           ANSIBLE_HOST_KEY_CHECKING: "false"
