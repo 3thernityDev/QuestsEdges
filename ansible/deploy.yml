@@ -4,7 +4,6 @@
 
 - name: Deploy QuestsEdges API
   hosts: all
-  become: yes
   vars:
     app_name: questsedges-api
     app_dir: /home/srvPod/QuestsEdges
@@ -20,7 +19,6 @@
         owner: srvPod
         group: srvPod
         mode: '0755'
-      become_user: srvPod
 
     - name: Afficher la version deployee
       debug:
