@@ -34,6 +34,15 @@
         force: yes
       become_user: srvPod
 
+    - name: Copier le fichier .env sur le serveur
+      copy:
+        src: ansible/.env.deploy
+        dest: "{{ app_dir }}/.env"
+        owner: srvPod
+        group: srvPod
+        mode: '0600'
+      become_user: srvPod
+
     # La copie du .env est maintenant gérée par le workflow CI/CD
     # - name: Verifier si le fichier .env existe
     #   stat:

@@ -94,8 +94,7 @@ jobs:
               id: version
               run: |
                   VERSION=$(node -p "require('./package.json').version")
-                  COMMIT_SHORT=$(git rev-parse --short HEAD)
-                  TAG="v${VERSION}-${COMMIT_SHORT}"
+                  TAG="v${VERSION}"
                   echo "version=${VERSION}" >> $GITHUB_OUTPUT
                   echo "tag=${TAG}" >> $GITHUB_OUTPUT
                   echo "Release version: ${TAG}"
@@ -132,23 +131,19 @@ jobs:
             - name: Install Ansible
               run: |
                   pip install ansible
+            - name: Setup SSH key
+              run: |
+                mkdir -p ~/.ssh
+                echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                chmod 600 ~/.ssh/id_rsa
+                ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+              shell: /usr/bin/bash -e {0}
 
             - name: Write .env file from secret
               run: |
                   echo "$PROD_ENV_FILE" > ansible/.env.deploy
               env:
                   PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
-
-            - name: Copy .env to server
-              uses: appleboy/scp-action@v0.1.4
-              with:
-                host: ${{ secrets.VPS_HOST }}
-                username: ${{ secrets.VPS_USER }}
-                key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-                port: ${{ secrets.VPS_SSH_PORT }}
-                source: "ansible/.env.deploy"
-                target: "/home/srvPod/QuestsEdges/.env"
-
             - name: Run Ansible Playbook
               run: |
                   ansible-playbook ansible/deploy.yml \
@@ -241,13 +236,10 @@ jobs:
                       ## QuestsEdges API Release
                       **Version:** ${{ needs.release.outputs.version }}
                       **Commit:** ${{ github.sha }}
-                      ### Installation
-                      ```bash
-                      tar -xzvf questsedges-api-${{ needs.release.outputs.tag }}.tar.gz
-                      npm ci --production
-                      npx prisma migrate deploy
-                      npm start
-                      ```
-                  files: questsedges-api-${{ needs.release.outputs.tag }}.tar.gz
-                  draft: false
+                # La copie du fichier .env.deploy sur le serveur doit être réalisée via une tâche Ansible dans ansible/deploy.yml :
+                # Exemple à ajouter dans le playbook :
+                # - name: Copier le fichier .env sur le serveur
+                #   copy:
+                #     src: ansible/.env.deploy
+                #     dest: /home/srvPod/QuestsEdges/.env
                   prerelease: false
