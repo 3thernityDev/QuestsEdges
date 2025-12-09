@@ -89,10 +89,10 @@ export const updateUser = async (
             });
             return;
         }
-        const { username, email, skin_url } = req.body;
+        const { username, email } = req.body;
         const updatedUser = await prisma.user.update({
             where: { id },
-            data: { username, email, skin_url },
+            data: { username, email },
         });
         res.status(200).json({
             message: "Utilisateur mis à jour avec succès",
