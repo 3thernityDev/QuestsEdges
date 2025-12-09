@@ -31,7 +31,7 @@
         version: "{{ release_tag }}"
         force: yes
         update: yes
-        fetch: yes
+        refspec: +refs/tags/*:refs/tags/*
         accept_hostkey: yes
       become_user: srvPod
 
