@@ -12,6 +12,16 @@
     container_name: api
 
   tasks:
+
+    - name: Créer le dossier du projet s'il n'existe pas
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: srvPod
+        group: srvPod
+        mode: '0755'
+      become_user: srvPod
+
     - name: Afficher la version deployee
       debug:
         msg: "Deploiement de la version {{ release_tag }}"
@@ -24,15 +34,16 @@
         force: yes
       become_user: srvPod
 
-    - name: Verifier si le fichier .env existe
-      stat:
-        path: "{{ app_dir }}/.env"
-      register: env_file
+    # La copie du .env est maintenant gérée par le workflow CI/CD
+    # - name: Verifier si le fichier .env existe
+    #   stat:
+    #     path: "{{ app_dir }}/.env"
+    #   register: env_file
 
-    - name: Avertir si .env manquant
-      fail:
-        msg: "Le fichier .env n'existe pas dans {{ app_dir }}. Veuillez le creer avant le deploiement."
-      when: not env_file.stat.exists
+    # - name: Avertir si .env manquant
+    #   fail:
+    #     msg: "Le fichier .env n'existe pas dans {{ app_dir }}. Veuillez le creer avant le deploiement."
+    #   when: not env_file.stat.exists
 
     - name: Installer les dependances dans le conteneur
       command: podman exec {{ container_name }} npm ci --omit=dev

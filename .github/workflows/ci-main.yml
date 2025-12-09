@@ -162,6 +162,16 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Write .env file from secret
+        run: |
+          echo "$PROD_ENV_FILE" > ansible/.env.deploy
+        env:
+          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+
+      - name: Copy .env to server
+        run: |
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ansible/.env.deploy ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/srvPod/QuestsEdges/.env
+
       - name: Run Ansible Playbook
         run: |
           ansible-playbook ansible/deploy.yml \
