@@ -148,8 +148,14 @@ jobs:
                   PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
 
             - name: Copy .env to server
-              run: |
-                  scp -P ${{ secrets.VPS_SSH_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ansible/.env.deploy ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/srvPod/QuestsEdges/.env
+              uses: appleboy/scp-action@v0.1.4
+              with:
+                host: ${{ secrets.VPS_HOST }}
+                username: ${{ secrets.VPS_USER }}
+                key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+                port: ${{ secrets.VPS_SSH_PORT }}
+                source: "ansible/.env.deploy"
+                target: "/home/srvPod/QuestsEdges/.env"
 
             - name: Run Ansible Playbook
               run: |
