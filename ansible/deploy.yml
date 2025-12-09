@@ -31,6 +31,8 @@
         version: "{{ release_tag }}"
         force: yes
         update: yes
+        fetch: yes
+        accept_hostkey: yes
       become_user: srvPod
 
     - name: Copier le fichier .env sur le serveur
