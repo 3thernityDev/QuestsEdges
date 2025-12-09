@@ -77,9 +77,9 @@ jobs:
           retention-days: 1
 
   release:
-    name: Create Release
+    name: Prepare Release Archive
     runs-on: ubuntu-latest
-    needs: verify
+    needs: build
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
@@ -113,28 +113,6 @@ jobs:
             prisma/ \
             package.json \
             package-lock.json
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: Release ${{ steps.version.outputs.tag }}
-          body: |
-            ## QuestsEdges API Release
-            
-            **Version:** ${{ steps.version.outputs.version }}
-            **Commit:** ${{ github.sha }}
-            
-            ### Installation
-            ```bash
-            tar -xzvf questsedges-api-${{ steps.version.outputs.tag }}.tar.gz
-            npm ci --production
-            npx prisma migrate deploy
-            npm start
-            ```
-          files: questsedges-api-${{ steps.version.outputs.tag }}.tar.gz
-          draft: false
-          prerelease: false
 
   deploy:
     name: Deploy to VPS
@@ -245,3 +223,40 @@ jobs:
         run: |
           echo "All post-deployment checks passed!"
           echo "API Version: ${{ needs.release.outputs.tag }}"
+
+  publish_release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: verify
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download release archive
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          name: Release ${{ needs.release.outputs.tag }}
+          body: |
+            ## QuestsEdges API Release
+            **Version:** ${{ needs.release.outputs.version }}
+            **Commit:** ${{ github.sha }}
+            ### Installation
+            ```bash
+            tar -xzvf questsedges-api-${{ needs.release.outputs.tag }}.tar.gz
+            npm ci --production
+            npx prisma migrate deploy
+            npm start
+            ```
+          files: questsedges-api-${{ needs.release.outputs.tag }}.tar.gz
+          draft: false
+          prerelease: false
