@@ -79,7 +79,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: build
+    needs: verify
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
@@ -164,6 +164,7 @@ jobs:
         shell: /usr/bin/bash -e {0}
 
       - name: Debug SSH secret
+        if: env.DEBUG_SSH == 'true'
         run: |
           echo "Longueur du secret :"
           echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" | wc -c
