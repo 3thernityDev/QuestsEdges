@@ -17,9 +17,11 @@ jobs:
             - name: Setup SSH key
               run: |
                   mkdir -p ~/.ssh
-                  printf "%s\n" "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                  echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
                   chmod 600 ~/.ssh/id_rsa
                   ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+                  ls -l ~/.ssh/
+                  file ~/.ssh/id_rsa || echo "Type inconnu"
             - name: Vérification clé SSH
               run: |
                   ls -l ~/.ssh/
