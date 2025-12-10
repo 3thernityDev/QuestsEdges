@@ -42,8 +42,8 @@
       when: not env_file.stat.exists
 
 
-    - name: Lancer les conteneurs avec podman compose
-      command: podman compose -f {{ app_dir }}/compose.yml up -d
+    - name: Lancer les conteneurs avec podman compose (prod)
+      command: podman compose -f {{ app_dir }}/compose.prod.yml up -d
       become_user: srvPod
 
     - name: Installer les dependances dans le conteneur
