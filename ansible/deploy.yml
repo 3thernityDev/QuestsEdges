@@ -12,9 +12,21 @@
     container_name: api
 
   tasks:
+        - name: Créer le fichier .env depuis le secret GitHub
+          copy:
+            dest: "{{ app_dir }}/.env"
+            content: "{{ lookup('env', 'PROD_ENV_FILE') }}"
+          become_user: srvPod
     - name: Afficher la version deployee
       debug:
         msg: "Deploiement de la version {{ release_tag }}"
+
+    - name: Créer le dossier de l'application s'il n'existe pas
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: srvPod
+        mode: '0755'
 
     - name: Pull des derniers changements depuis GitHub
       git:
