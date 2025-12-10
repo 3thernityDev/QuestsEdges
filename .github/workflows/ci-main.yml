@@ -84,12 +84,11 @@ jobs:
             - name: Prepare artifact contents
               run: |
                   mkdir -p QuestsEdges
-                  # Create .env from secret without printing it to logs
-                  printf "%s" "${{ secrets.PROD_ENV_FILE }}" > QuestsEdges/.env
+                  # Copie le .env du secret, nettoie les retours Windows, supprime l’ancienne DATABASE_URL et ajoute une valeur fictive
+                  printf "%s" "${{ secrets.PROD_ENV_FILE }}" | tr -d '\r' > QuestsEdges/.env
+                  sed -i '/^DATABASE_URL=/d' QuestsEdges/.env
+                  echo 'DATABASE_URL="file:./dev.db"' >> QuestsEdges/.env
                   chmod 600 QuestsEdges/.env
-                    # Copie tout le .env (ou le secret) puis écrase DATABASE_URL pour la CI
-                    sed -i '/^DATABASE_URL=/d' QuestsEdges/.env
-                    echo 'DATABASE_URL="file:./dev.db"' >> QuestsEdges/.env
 
             - name: Archive build
               run: |
