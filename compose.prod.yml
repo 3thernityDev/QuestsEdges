@@ -5,9 +5,9 @@ services:
     working_dir: /app
     volumes:
       - ./dist:/app/dist:Z
-    command: sh -c "npm ci --omit=dev && npm run build && npm start"
       - ./package.json:/app/package.json:Z
       - ./package-lock.json:/app/package-lock.json:Z
+    command: sh -c "npm ci --omit=dev && npm start"
     ports:
       - "3000:3000"
     environment:

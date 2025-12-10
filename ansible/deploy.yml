@@ -42,6 +42,14 @@
       when: not env_file.stat.exists
 
 
+
+    - name: Extraire le code compilé et les fichiers nécessaires
+      unarchive:
+        src: "questsedges-api-{{ release_tag }}.tar.gz"
+        dest: "{{ app_dir }}"
+        remote_src: yes
+      become_user: srvPod
+
     - name: Lancer les conteneurs avec podman compose (prod)
       command: podman compose -f {{ app_dir }}/compose.prod.yml up -d
       become_user: srvPod
