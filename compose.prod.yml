@@ -4,8 +4,10 @@ services:
     image: node:25-alpine3.21
     working_dir: /app
     volumes:
-      - ./:/app:Z
+      - ./dist:/app/dist:Z
     command: sh -c "npm ci --omit=dev && npm run build && npm start"
+      - ./package.json:/app/package.json:Z
+      - ./package-lock.json:/app/package-lock.json:Z
     ports:
       - "3000:3000"
     environment:
