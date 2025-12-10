@@ -14,6 +14,12 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            - name: Setup SSH key
+              run: |
+                  mkdir -p ~/.ssh
+                  printf "%s\n" "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                  chmod 600 ~/.ssh/id_rsa
+                  ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
             - name: Debug env
               run: |
                   echo "VPS_HOST=${{ secrets.VPS_HOST }}"
