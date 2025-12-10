@@ -189,11 +189,7 @@ jobs:
                   mkdir -p ~/.ssh
                   printf "%s" "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
                   chmod 600 ~/.ssh/id_rsa
-                  if [ -n "${{ secrets.VPS_SSH_PORT }}" ]; then
-                    ssh-keyscan -p "${{ secrets.VPS_SSH_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
-                  else
-                    ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
-                  fi
+                  ssh-keyscan -p "${{ secrets.VPS_SSH_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
             - name: Run Ansible Playbook
               run: |
