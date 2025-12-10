@@ -15,13 +15,12 @@
       debug:
         msg: "Deploiement de la version {{ release_tag }}"
 
-    - name: Pull des derniers changements depuis GitHub
-      git:
-        repo: "{{ repo_url }}"
-        dest: "{{ app_dir }}"
-        version: "{{ release_tag }}"
-        force: yes
-      become_user: srvPod
+
+    - name: Copier l'archive de build sur le serveur
+      copy:
+        src: "questsedges-api-{{ release_tag }}.tar.gz"
+        dest: "{{ app_dir }}/questsedges-api-{{ release_tag }}.tar.gz"
+        mode: '0644'
 
 
     - name: Copier le fichier .env depuis le runner
@@ -43,35 +42,23 @@
 
 
 
+
     - name: Extraire le code compilé et les fichiers nécessaires
       unarchive:
-        src: "questsedges-api-{{ release_tag }}.tar.gz"
+        src: "{{ app_dir }}/questsedges-api-{{ release_tag }}.tar.gz"
         dest: "{{ app_dir }}"
         remote_src: yes
       become_user: srvPod
 
+
+    - name: Installer les dépendances de production
+      command: npm ci --omit=dev
+      args:
+        chdir: "{{ app_dir }}"
+      become_user: srvPod
+
     - name: Lancer les conteneurs avec podman compose (prod)
       command: podman compose -f {{ app_dir }}/compose.prod.yml up -d
-      become_user: srvPod
-
-    - name: Installer les dependances dans le conteneur
-      command: podman exec {{ container_name }} npm ci --omit=dev
-      become_user: srvPod
-
-    - name: Generer le client Prisma
-      command: podman exec {{ container_name }} npx prisma generate
-      become_user: srvPod
-
-    - name: Appliquer les migrations de base de donnees
-      command: podman exec {{ container_name }} npx prisma migrate deploy
-      become_user: srvPod
-
-    - name: Rebuild TypeScript
-      command: podman exec {{ container_name }} npm run build
-      become_user: srvPod
-
-    - name: Redemarrer le conteneur API pour appliquer les changements
-      command: podman restart {{ container_name }}
       become_user: srvPod
 
     - name: Attendre que l'API soit prete
