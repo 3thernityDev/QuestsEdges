@@ -1,110 +1,123 @@
----
 - name: Deploy QuestsEdges API
   hosts: all
   vars:
-    app_name: questsedges-api
-    app_dir: /home/srvPod/QuestsEdges
-    container_name: api
+      app_name: questsedges-api
+      app_dir: /home/srvPod/QuestsEdges
+      container_name: api
 
   tasks:
-    - name: Afficher la version deployee
-      debug:
-        msg: "Deploiement de la version {{ release_tag }}"
+      - name: Afficher la version deployee
+        debug:
+            msg: "Deploiement de la version {{ release_tag }}"
 
-    - name: Creer le repertoire d'application
-      ansible.builtin.file:
-        path: "{{ app_dir }}"
-        state: directory
-        owner: srvPod
-        mode: '0755'
-      become_user: root
+      - name: Creer le repertoire d'application
+        ansible.builtin.file:
+            path: "{{ app_dir }}"
+            state: directory
+            owner: srvPod
+            mode: "0755"
+        become_user: root
 
-    - name: Copier l'archive de build sur le VPS
-      ansible.builtin.copy:
-        src: "{{ lookup('env', 'GITHUB_WORKSPACE') }}/{{ archive_name }}"
-        dest: "{{ app_dir }}/{{ archive_name }}"
-        owner: srvPod
-        mode: '0644'
-      become_user: srvPod
-      
-    - name: Extraire l'archive dans le repertoire d'application
-      ansible.builtin.unarchive:
-        src: "{{ app_dir }}/{{ archive_name }}"
-        dest: "{{ app_dir }}"
-        remote_src: yes
-        owner: srvPod
-      become_user: srvPod
-    
-    - name: Créer le fichier .env depuis le secret GitHub
-      copy:
-        content: "{{ lookup('env', 'PROD_ENV_FILE') }}"
-        dest: "{{ app_dir }}/.env"
-        owner: srvPod
-        mode: '0600'
-      when: not lookup('file', app_dir + '/.env', errors='ignore')
+      - name: Copier l'archive de build sur le VPS
+        ansible.builtin.copy:
+            src: "{{ lookup('env', 'GITHUB_WORKSPACE') }}/{{ archive_name }}"
+            dest: "{{ app_dir }}/{{ archive_name }}"
+            owner: srvPod
+            mode: "0644"
+        become_user: srvPod
 
-    - name: Verifier si le fichier .env existe
-      stat:
-        path: "{{ app_dir }}/.env"
-      register: env_file
+      - name: Extraire l'archive dans le repertoire d'application
+        ansible.builtin.unarchive:
+            src: "{{ app_dir }}/{{ archive_name }}"
+            dest: "{{ app_dir }}"
+            remote_src: yes
+            owner: srvPod
+        become_user: srvPod
 
-    - name: FAIL si .env manquant
-      fail:
-        msg: "Le fichier .env n'existe pas dans {{ app_dir }}. Veuillez le creer."
-      when: not env_file.stat.exists
+      - name: Deplacer le .env au bon endroit
+        ansible.builtin.command: mv "{{ app_dir }}/QuestsEdges/.env" "{{ app_dir }}/.env"
+        args:
+            chdir: "{{ app_dir }}"
+        become_user: srvPod
 
-    - name: Demarrer ou Mettre a jour les services avec podman-compose
-      ansible.builtin.command: podman-compose -f compose.prod.yml up -d
-      args:
-        chdir: "{{ app_dir }}"
-      register: compose_up
-      changed_when: compose_up.rc != 0 or 'Recreating' in compose_up.stdout
-      become_user: srvPod
+      - name: Supprimer le dossier QuestsEdges cree par l'archive
+        ansible.builtin.file:
+            path: "{{ app_dir }}/QuestsEdges"
+            state: absent
+        become_user: srvPod
 
-    - name: Installer les dependances dans le conteneur
-      command: podman exec {{ container_name }} npm ci --omit=dev
-      args:
-        chdir: "{{ app_dir }}"
-      become_user: srvPod
+      - name: Verifier si le fichier .env existe
+        ansible.builtin.stat:
+            path: "{{ app_dir }}/.env"
+        register: env_file
 
-    - name: Generer le client Prisma
-      command: podman exec {{ container_name }} npx prisma generate
-      args:
-        chdir: "{{ app_dir }}"
-      become_user: srvPod
+      - name: FAIL si .env manquant
+        ansible.builtin.fail:
+            msg: "Le fichier .env n'existe pas dans {{ app_dir }}. Veuillez le creer."
+        when: not env_file.stat.exists
 
-    - name: Appliquer les migrations de base de donnees
-      command: podman exec {{ container_name }} npx prisma migrate deploy
-      args:
-        chdir: "{{ app_dir }}"
-      become_user: srvPod
+      - name: Purger les anciens services (sans toucher aux volumes de donnees)
+        ansible.builtin.command: podman-compose -f compose.prod.yml down
+        args:
+            chdir: "{{ app_dir }}"
+        register: compose_down
+        changed_when: compose_down.rc == 0
+        failed_when: compose_down.rc != 0 and 'no project' not in compose_down.stderr
+        become_user: srvPod
 
-    - name: Rebuild TypeScript
-      command: podman exec {{ container_name }} npm run build
-      args:
-        chdir: "{{ app_dir }}"
-      become_user: srvPod
+      - name: Demarrer ou Mettre a jour les services avec podman-compose
+        ansible.builtin.command: podman-compose -f compose.prod.yml up -d
+        args:
+            chdir: "{{ app_dir }}"
+            timeout: 180
+        register: compose_up
+        changed_when: compose_up.rc != 0 or 'Recreating' in compose_up.stdout
+        become_user: srvPod
 
-    - name: Redemarrer le conteneur API pour appliquer les changements
-      command: podman restart {{ container_name }}
-      become_user: srvPod
+      - name: Installer les dependances dans le conteneur
+        command: podman exec {{ container_name }} npm ci --omit=dev
+        args:
+            chdir: "{{ app_dir }}"
+        become_user: srvPod
 
-    - name: Attendre que l'API soit prete
-      wait_for:
-        port: 3000
-        host: localhost
+      - name: Generer le client Prisma
+        command: podman exec {{ container_name }} npx prisma generate
+        args:
+            chdir: "{{ app_dir }}"
+        become_user: srvPod
+
+      - name: Appliquer les migrations de base de donnees
+        command: podman exec {{ container_name }} npx prisma migrate deploy
+        args:
+            chdir: "{{ app_dir }}"
+        become_user: srvPod
+
+      - name: Rebuild TypeScript
+        command: podman exec {{ container_name }} npm run build
+        args:
+            chdir: "{{ app_dir }}"
+        become_user: srvPod
+
+      - name: Redemarrer le conteneur API pour appliquer les changements
+        command: podman restart {{ container_name }}
+        become_user: srvPod
+
+      - name: Attendre que l'API soit prete
+        wait_for:
+            port: 3000
+            host: localhost
+            delay: 5
+            timeout: 60
+
+      - name: Verifier le health check
+        uri:
+            url: http://localhost:3000/health
+            method: GET
+            status_code: 200
+        register: health_check
+        retries: 3
         delay: 5
-        timeout: 60
 
-    - name: Verifier le health check
-      uri:
-        url: http://localhost:3000/health
-        method: GET
-        status_code: 200
-      register: health_check
-      retries: 3
-      delay: 5
-
-    - name: Afficher le resultat du health check
-      debug:
-        msg: "API deployee avec succes - Status: {{ health_check.json.status }}"
+      - name: Afficher le resultat du health check
+        debug:
+            msg: "API deployee avec succes - Status: {{ health_check.json.status }}"
