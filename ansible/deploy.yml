@@ -98,8 +98,8 @@
             chdir: "{{ app_dir }}"
         become_user: srvPod
 
-      - name: Redemarrer le conteneur API pour appliquer les changements
-        ansible.builtin.command: podman restart {{ container_name }}
+      - name: Lancer l'API en production
+        ansible.builtin.command: podman exec -d {{ container_name }} node dist/index.js
         become_user: srvPod
 
       - name: Attendre que l'API soit prete
