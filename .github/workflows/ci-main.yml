@@ -87,6 +87,9 @@ jobs:
                   # Create .env from secret without printing it to logs
                   printf "%s" "${{ secrets.PROD_ENV_FILE }}" > QuestsEdges/.env
                   chmod 600 QuestsEdges/.env
+                    # Copie tout le .env (ou le secret) puis écrase DATABASE_URL pour la CI
+                    sed -i '/^DATABASE_URL=/d' QuestsEdges/.env
+                    echo 'DATABASE_URL="file:./dev.db"' >> QuestsEdges/.env
 
             - name: Archive build
               run: |
