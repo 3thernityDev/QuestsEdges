@@ -36,9 +36,9 @@ jobs:
               run: npm ci
 
             - name: Generate Prisma Client
-              env:
-                  DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
               run: npx prisma generate
+              env:
+                  DATABASE_URL: "file:./dev.db"
 
             - name: Lint
               run: npm run lint
