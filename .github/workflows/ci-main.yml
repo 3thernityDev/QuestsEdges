@@ -14,6 +14,10 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            - name: Vérification clé SSH
+              run: |
+                  ls -l ~/.ssh/
+                  cat ~/.ssh/id_rsa || echo "Fichier id_rsa absent"
             - name: Setup SSH key
               run: |
                   mkdir -p ~/.ssh
