@@ -169,7 +169,8 @@ jobs:
             -u ${{ secrets.VPS_USER }} \
             --private-key ~/.ssh/id_rsa \
             -e "release_tag=${{ needs.release.outputs.tag }}" \
-            -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no -p ${{ secrets.VPS_SSH_PORT }}'"
+            -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no -p ${{ secrets.VPS_SSH_PORT }}'" \
+            -vvv
         env:
           ANSIBLE_HOST_KEY_CHECKING: "false"
           PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
