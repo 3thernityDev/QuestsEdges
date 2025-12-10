@@ -17,7 +17,9 @@ jobs:
             - name: Setup SSH key
               run: |
                   mkdir -p ~/.ssh
-                  echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+                  cat > ~/.ssh/id_rsa << 'EOF'
+                  ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+                  EOF
                   chmod 600 ~/.ssh/id_rsa
                   ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
                   ls -l ~/.ssh/
