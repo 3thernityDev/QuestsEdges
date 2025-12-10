@@ -187,12 +187,13 @@ jobs:
             - name: Setup SSH key (private, not printed)
               run: |
                   mkdir -p ~/.ssh
-                  printf "%s" "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                  # Utilisation de echo pour garantir le format correct et le saut de ligne final
+                  echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
                   chmod 600 ~/.ssh/id_rsa
                   ssh-keyscan -p "${{ secrets.VPS_SSH_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
             - name: Test SSH connection
-              run: ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${{ secrets.VPS_SSH_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "echo ok"
+              run: ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${{ secrets.VPS_SSH_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "echo Connexion SSH OK"
 
             - name: Run Ansible Playbook
               run: |
