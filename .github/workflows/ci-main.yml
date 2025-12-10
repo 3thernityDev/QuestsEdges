@@ -1,46 +1,28 @@
-name: CI/CD - Main Branch (Release & Deploy)
+name: CI/CD - main (Release & Deploy)
 
 on:
     push:
-        branches:
-            - main
+        branches: [main]
 
 permissions:
     contents: write
+
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+defaults:
+    run:
+        shell: bash
+
+env:
+    NODE_OPTIONS: "--max_old_space_size=2048"
 
 jobs:
     test:
         name: Tests & Lint
         runs-on: ubuntu-latest
-
         steps:
-            - name: Setup SSH key (debug)
-              run: |
-                  set -x
-                  mkdir -p ~/.ssh || echo "mkdir failed"
-                  cat > ~/.ssh/id_rsa << 'EOF'
-                  ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-                  EOF
-                  ls -l ~/.ssh/ || echo "ls failed"
-                  chmod 600 ~/.ssh/id_rsa || echo "chmod failed"
-                  file ~/.ssh/id_rsa || echo "file failed"
-                  ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts || echo "ssh-keyscan failed"
-                  ls -l ~/.ssh/
-                  file ~/.ssh/id_rsa || echo "Type inconnu"
-            - name: Vérification clé SSH
-              run: |
-                  ls -l ~/.ssh/
-                  cat ~/.ssh/id_rsa || echo "Fichier id_rsa absent"
-            - name: Debug env
-              run: |
-                  echo "VPS_HOST=${{ secrets.VPS_HOST }}"
-                  echo "VPS_USER=${{ secrets.VPS_USER }}"
-                  echo "VPS_SSH_PORT=${{ secrets.VPS_SSH_PORT }}"
-                  if [ -z "${{ secrets.PROD_ENV_FILE }}" ]; then echo "PROD_ENV_FILE is empty"; else echo "PROD_ENV_FILE is set"; fi
-
-            - name: Test SSH connection
-              run: |
-                  ssh -v -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${{ secrets.VPS_SSH_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'echo SSH OK'
             - name: Checkout code
               uses: actions/checkout@v4
 
@@ -54,150 +36,166 @@ jobs:
               run: npm ci
 
             - name: Generate Prisma Client
-              run: npx prisma generate
               env:
-                  DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
+                  DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+              run: npx prisma generate
 
-            - name: TypeScript check
+            - name: Lint
               run: npm run lint
 
-            - name: Run tests
-              run: npm run test
+            - name: Test
+              run: npm test
+
+    build:
+        name: Build & Archive
+        runs-on: ubuntu-latest
+        needs: test
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Generate Prisma Client
               env:
-                  NODE_ENV: test
-                  DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
-                  JWT_SECRET: "ci-test-secret-key-minimum-32-characters"
-                  AZURE_CLIENT_ID: "ci-test-client-id"
-                  AZURE_SECRET: "ci-test-secret"
+                  DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+              run: npx prisma generate
 
-        build:
-            name: Build
-            runs-on: ubuntu-latest
-            needs: test
+            - name: Build
+              run: npm run build
 
-            steps:
-                - name: Checkout code
-                  uses: actions/checkout@v4
+            - name: Verify build folder
+              run: |
+                  if [ -d "dist" ]; then
+                    echo "Build OK"
+                    ls -la dist | head -n 20
+                  else
+                    echo "No dist directory"
+                    exit 1
+                  fi
 
-                - name: Setup Node.js
-                  uses: actions/setup-node@v4
-                  with:
-                      node-version: "20"
-                      cache: "npm"
+            - name: Prepare artifact contents
+              run: |
+                  mkdir -p QuestsEdges
+                  # Create .env from secret without printing it to logs
+                  printf "%s" "${{ secrets.PROD_ENV_FILE }}" > QuestsEdges/.env
+                  chmod 600 QuestsEdges/.env
 
-                - name: Install dependencies
-                  run: npm ci
+            - name: Archive build
+              run: |
+                  ARCHIVE="questsedges-api-${{ github.sha }}.tar.gz"
+                  tar -czf "$ARCHIVE" dist/ package.json package-lock.json QuestsEdges/.env compose.prod.yml prisma/
+                  echo "archive=$ARCHIVE" >> $GITHUB_OUTPUT
 
-                - name: Generate Prisma Client
-                  run: npx prisma generate
-                  env:
-                      DATABASE_URL: "mysql://ci:ci@localhost:3306/ci"
+            - name: Upload build artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-archive
+                  path: questsedges-api-${{ github.sha }}.tar.gz
+                  retention-days: 7
 
-                - name: Build
-                  run: npm run build
+    release:
+        name: Create Release
+        runs-on: ubuntu-latest
+        needs: build
+        outputs:
+            tag: ${{ steps.version.outputs.tag }}
+            version: ${{ steps.version.outputs.version }}
+        steps:
+            - name: Checkout (full history)
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-                - name: Upload build artifact
-                  uses: actions/upload-artifact@v4
-                  with:
-                      name: dist
-                      path: dist/
-                      retention-days: 1
+            - name: Get version & tag
+              id: version
+              run: |
+                  VERSION=$(node -p "require('./package.json').version")
+                  COMMIT_SHORT=$(git rev-parse --short HEAD)
+                  TAG="v${VERSION}-${COMMIT_SHORT}"
+                  echo "version=${VERSION}" >> $GITHUB_OUTPUT
+                  echo "tag=${TAG}" >> $GITHUB_OUTPUT
+                  echo "Tag to create: ${TAG}"
 
-        release:
-            name: Create Release
-            runs-on: ubuntu-latest
-            needs: build
-            outputs:
-                version: ${{ steps.version.outputs.version }}
-                tag: ${{ steps.version.outputs.tag }}
+            - name: Download build artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-archive
+                  path: .
 
-            steps:
-                - name: Checkout code
-                  uses: actions/checkout@v4
-                  with:
-                      fetch-depth: 0
+            - name: Create release archive for GitHub
+              run: |
+                  ARCHIVE=$(ls questsedges-api-*.tar.gz | head -n1)
+                  echo "archive=$ARCHIVE" >> $GITHUB_OUTPUT
 
-                - name: Get version from package.json
-                  id: version
-                  run: |
-                      VERSION=$(node -p "require('./package.json').version")
-                      COMMIT_SHORT=$(git rev-parse --short HEAD)
-                      TAG="v${VERSION}-${COMMIT_SHORT}"
-                      echo "version=${VERSION}" >> $GITHUB_OUTPUT
-                      echo "tag=${TAG}" >> $GITHUB_OUTPUT
-                      echo "Release version: ${TAG}"
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: ${{ steps.version.outputs.tag }}
+                  name: Release ${{ steps.version.outputs.tag }}
+                  body: |
+                      Release automatique pour ${{ github.ref }}
+                      Version: ${{ steps.version.outputs.version }}
+                      Commit: ${{ github.sha }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-                - name: Download build artifact
-                  uses: actions/download-artifact@v4
-                  with:
-                      name: dist
-                      path: dist/
+            - name: Upload release asset
+              uses: softprops/action-gh-release@v1
+              if: false
 
-                - name: Create release archive
-                  run: |
-                      tar -czvf questsedges-api-${{ steps.version.outputs.tag }}.tar.gz \
-                        dist/ \
-                        prisma/ \
-                        package.json \
-                        package-lock.json
+    deploy:
+        name: Deploy to VPS via Ansible
+        runs-on: ubuntu-latest
+        needs: release
+        environment: production
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-                - name: Create GitHub Release
-                  uses: softprops/action-gh-release@v1
-                  with:
-                      tag_name: ${{ steps.version.outputs.tag }}
-                      name: Release ${{ steps.version.outputs.tag }}
-                      body: |
-                          ## QuestsEdges API Release
+            - name: Download build artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-archive
+                  path: .
 
-                          **Version:** ${{ steps.version.outputs.version }}
-                          **Commit:** ${{ github.sha }}
+            - name: Setup Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
 
-                          ### Installation
-                          ```bash
-                          tar -xzvf questsedges-api-${{ steps.version.outputs.tag }}.tar.gz
-                          npm ci --production
-                          npx prisma migrate deploy
-                          npm start
-                          ```
-                      files: questsedges-api-${{ steps.version.outputs.tag }}.tar.gz
-                      draft: false
-                      prerelease: false
+            - name: Install Ansible
+              run: pip install --upgrade ansible
 
-        deploy:
-            name: Deploy to VPS
-            runs-on: ubuntu-latest
-            needs: release
-            environment: production
+            - name: Setup SSH key (private, not printed)
+              run: |
+                  mkdir -p ~/.ssh
+                  printf "%s" "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                  chmod 600 ~/.ssh/id_rsa
+                  # add host key (use port if non-standard)
+                  if [ -n "${{ secrets.VPS_SSH_PORT }}" ]; then
+                    ssh-keyscan -p "${{ secrets.VPS_SSH_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+                  else
+                    ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+                  fi
 
-            steps:
-                - name: Checkout code
-                  uses: actions/checkout@v4
-
-                - name: Setup Python
-                  uses: actions/setup-python@v5
-                  with:
-                      python-version: "3.11"
-
-                - name: Install Ansible
-                  run: |
-                      pip install ansible
-
-                - name: Setup SSH key
-                  run: |
-                      mkdir -p ~/.ssh
-                      printf "%s\n" "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-                      chmod 600 ~/.ssh/id_rsa
-                      ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-
-                - name: Run Ansible Playbook
-                  run: |
-                      ansible-playbook ansible/deploy.yml \
-                        -i "${{ secrets.VPS_HOST }}," \
-                        -u ${{ secrets.VPS_USER }} \
-                        --private-key ~/.ssh/id_rsa \
-                        -e "release_tag=${{ needs.release.outputs.tag }}" \
-                        -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no -p ${{ secrets.VPS_SSH_PORT }}'" \
-                        -vvv
-                  env:
-                      ANSIBLE_HOST_KEY_CHECKING: "false"
-                      PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+            - name: Run Ansible Playbook
+              run: |
+                  ARCHIVE=$(ls questsedges-api-*.tar.gz | head -n1)
+                  ansible-playbook ansible/deploy.yml \
+                    -i "${{ secrets.VPS_HOST }}," \
+                    -u "${{ secrets.VPS_USER }}" \
+                    --private-key ~/.ssh/id_rsa \
+                    -e "archive_name=${ARCHIVE}" \
+                    -e "ansible_port=${{ secrets.VPS_SSH_PORT }}" \
+                    -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no -p ${{ secrets.VPS_SSH_PORT }}'"
+              env:
+                  ANSIBLE_HOST_KEY_CHECKING: "false"
+                  PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
