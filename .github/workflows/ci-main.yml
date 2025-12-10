@@ -162,6 +162,12 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p ${{ secrets.VPS_SSH_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Download release archive
+        uses: actions/download-artifact@v4
+        with:
+          name: questsedges-api-${{ needs.release.outputs.tag }}.tar.gz
+          path: .
+
       - name: Run Ansible Playbook
         run: |
           ansible-playbook ansible/deploy.yml \
