@@ -75,7 +75,7 @@
         become_user: srvPod
 
       - name: Installer les dependances dans le conteneur
-        ansible.builtin.command: podman exec {{ container_name }} npm ci --omit=dev
+        ansible.builtin.command: podman exec {{ container_name }} npm i --omit=dev
         args:
             chdir: "{{ app_dir }}"
         become_user: srvPod
