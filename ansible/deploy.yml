@@ -4,7 +4,6 @@
 
 - name: Deploy QuestsEdges API
   hosts: all
-  become: yes
   vars:
     app_name: questsedges-api
     app_dir: /home/srvPod/QuestsEdges
@@ -23,6 +22,14 @@
         version: "{{ release_tag }}"
         force: yes
       become_user: srvPod
+    - name: Créer le fichier .env depuis le secret GitHub
+      copy:
+        content: "{{ lookup('env', 'PROD_ENV_FILE') }}"
+        dest: "{{ app_dir }}/.env"
+        owner: srvPod
+        mode: '0600'
+      when: not lookup('file', app_dir + '/.env', errors='ignore')
+
 
     - name: Verifier si le fichier .env existe
       stat:

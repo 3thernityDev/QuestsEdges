@@ -172,3 +172,4 @@ jobs:
             -e "ansible_ssh_common_args='-o StrictHostKeyChecking=no -p ${{ secrets.VPS_SSH_PORT }}'"
         env:
           ANSIBLE_HOST_KEY_CHECKING: "false"
+          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
