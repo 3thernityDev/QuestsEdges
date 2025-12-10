@@ -75,25 +75,25 @@
         become_user: srvPod
 
       - name: Installer les dependances dans le conteneur
-        ansible.builtin.command: podman exec {{ container_name }} npm i --omit=dev
+        ansible.builtin.command: podman exec --user 0 {{ container_name }} npm install --omit=dev
         args:
             chdir: "{{ app_dir }}"
         become_user: srvPod
 
       - name: Generer le client Prisma
-        ansible.builtin.command: podman exec {{ container_name }} npx prisma generate
+        ansible.builtin.command: podman exec --user 0 {{ container_name }} npx prisma generate
         args:
             chdir: "{{ app_dir }}"
         become_user: srvPod
 
       - name: Appliquer les migrations de base de donnees
-        ansible.builtin.command: podman exec {{ container_name }} npx prisma migrate deploy
+        ansible.builtin.command: podman exec --user 0 {{ container_name }} npx prisma migrate deploy
         args:
             chdir: "{{ app_dir }}"
         become_user: srvPod
 
       - name: Rebuild TypeScript
-        ansible.builtin.command: podman exec {{ container_name }} npm run build
+        ansible.builtin.command: podman exec --user 0 {{ container_name }} npm run build
         args:
             chdir: "{{ app_dir }}"
         become_user: srvPod
