@@ -7,12 +7,12 @@ import {
     updateChallengeService,
     joinChallengeService,
     deleteChallengeService,
-} from "../services/challengesServices";
+} from "@services/challengesServices";
 
 import {
     createChallengeSchema,
     updateChallengeSchema,
-} from "../schemas/challengeSchema";
+} from "@schemas/challengeSchema";
 
 export const getAllChallenges = async (
     req: Request,

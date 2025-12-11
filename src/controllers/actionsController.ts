@@ -5,11 +5,8 @@ import {
     createActionService,
     updateActionService,
     deleteActionService,
-} from "../services/actionsServices";
-import {
-    createActionSchema,
-    updateActionSchema,
-} from "../schemas/actionSchema";
+} from "@services/actionsServices";
+import { createActionSchema, updateActionSchema } from "@schemas/actionSchema";
 
 export const getAllActions = async (
     req: Request,

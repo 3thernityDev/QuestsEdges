@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import * as badgesServices from "../services/badgesServices";
-import { createBadgeSchema, updateBadgeSchema } from "../schemas/badgeSchema";
+import * as badgesServices from "@services/badgesServices";
+import { createBadgeSchema, updateBadgeSchema } from "@schemas/badgeSchema";
 
 // ========================
 // === BADGES CONTROLLER ==

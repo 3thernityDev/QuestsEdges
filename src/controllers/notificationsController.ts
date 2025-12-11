@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as notificationsServices from "../services/notificationsServices";
+import * as notificationsServices from "@services/notificationsServices";
 
 // ========================
 // === NOTIFICATIONS ======

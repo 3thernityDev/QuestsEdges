@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../config/bdd";
+import prisma from "@config/bdd";
 
 // GET /api/users - Récupérer tous les utilisateurs
 export const getUsers = async (req: Request, res: Response): Promise<void> => {

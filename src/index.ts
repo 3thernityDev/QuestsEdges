@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { getEnv } from "@config/env";
-import app from "@app";
+import { getEnv } from "@config/env.js";
+import app from "./app.js";
 
 // Valider les variables d'environnement au demarrage
 const env = getEnv();

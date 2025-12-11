@@ -1,6 +1,9 @@
 import type { Request, Response } from "express";
-import * as progressServices from "../services/progressServices";
-import { updateProgressSchema, incrementProgressSchema } from "../schemas/progressSchema";
+import * as progressServices from "@services/progressServices";
+import {
+    updateProgressSchema,
+    incrementProgressSchema,
+} from "@schemas/progressSchema";
 
 // ========================
 // === PROGRESS CONTROLLER =

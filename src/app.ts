@@ -1,16 +1,16 @@
 import express from "express";
 import helmet from "helmet";
-import corsMiddleware from "./config/cors";
-import { globalLimiter } from "./config/rateLimit";
-import { errorHandler, notFoundHandler } from "./middlewares/errorMiddleware";
-import userRouter from "./routes/userRoutes";
-import authRouter from "./routes/authRoutes";
-import challengeRouter from "./routes/challengeRoutes";
-import actionRouter from "./routes/actionRoutes";
-import progressRouter from "./routes/progressRoutes";
-import badgeRouter from "./routes/badgeRoutes";
-import notificationRouter from "./routes/notificationRoutes";
-import prisma from "./config/bdd";
+import corsMiddleware from "@config/cors";
+import { globalLimiter } from "@config/rateLimit";
+import { errorHandler, notFoundHandler } from "@middlewares/errorMiddleware";
+import userRouter from "@routes/userRoutes";
+import authRouter from "@routes/authRoutes";
+import challengeRouter from "@routes/challengeRoutes";
+import actionRouter from "@routes/actionRoutes";
+import progressRouter from "@routes/progressRoutes";
+import badgeRouter from "@routes/badgeRoutes";
+import notificationRouter from "@routes/notificationRoutes";
+import prisma from "@config/bdd";
 
 const app = express();
 

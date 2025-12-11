@@ -112,7 +112,7 @@
       become_user: srvPod
 
     - name: Lancer l'API en production
-      ansible.builtin.command: podman exec -d {{ container_name }} node dist/index.js
+      ansible.builtin.command: podman exec -d {{ container_name }} npm start
       become_user: srvPod
 
     - name: Attendre que l'API soit prete

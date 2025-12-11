@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import prisma from "../config/bdd";
+import prisma from "@config/bdd";
 
 // Configuration OAuth Microsoft
 const MICROSOFT_CLIENT_ID = process.env.AZURE_CLIENT_ID!;
