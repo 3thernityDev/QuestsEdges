@@ -26,6 +26,12 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
+            - name: Afficher le contenu src/
+              run: ls -R src
+
+            - name: Afficher le tsconfig.json utilisé
+              run: cat tsconfig.json
+
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
@@ -54,6 +60,9 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
+            - name: Nettoyer le cache TypeScript et dist
+              run: rm -rf dist node_modules/.cache
+
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
@@ -70,6 +79,9 @@ jobs:
 
             - name: Build
               run: npm run build
+
+            - name: Vérifier le contenu dist/config
+              run: ls -la dist/config || echo "dist/config absent"
 
             - name: Verify build folder
               run: |
