@@ -1,14 +1,25 @@
 {
     "compilerOptions": {
         "target": "ES2020",
-        "module": "ES2020",
-        "moduleResolution": "node",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
         "rootDir": "src",
         "outDir": "dist",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "strict": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+
+        "baseUrl": "./src",
+        "paths": {
+            "@config/*": ["config/*"],
+            "@controllers/*": ["controllers/*"],
+            "@services/*": ["services/*"],
+            "@routes/*": ["routes/*"],
+            "@middlewares/*": ["middlewares/*"],
+            "@schemas/*": ["schemas/*"],
+            "@generated/*": ["generated/*"]
+        }
     },
     "include": ["src/**/*"],
     "exclude": ["node_modules", "dist"]

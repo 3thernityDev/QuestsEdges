@@ -1,5 +1,8 @@
-import prisma from "../config/bdd";
-import { CreateChallengeInput, UpdateChallengeInput } from "../schemas/challengeSchema";
+import prisma from "@config/bdd";
+import {
+    CreateChallengeInput,
+    UpdateChallengeInput,
+} from "@schemas/challengeSchema";
 
 export const findAllChallenges = async () => {
     return prisma.challenges.findMany();
@@ -19,7 +22,10 @@ export const findActiveChallenges = async () => {
     });
 };
 
-export const createChallengeService = async (creatorId: number, data: CreateChallengeInput) => {
+export const createChallengeService = async (
+    creatorId: number,
+    data: CreateChallengeInput
+) => {
     return prisma.challenges.create({
         data: {
             ...data,
@@ -28,14 +34,20 @@ export const createChallengeService = async (creatorId: number, data: CreateChal
     });
 };
 
-export const updateChallengeService = async (id: number, data: UpdateChallengeInput) => {
+export const updateChallengeService = async (
+    id: number,
+    data: UpdateChallengeInput
+) => {
     return prisma.challenges.update({
         where: { id },
         data,
     });
 };
 
-export const joinChallengeService = async (userId: number, challengeId: number) => {
+export const joinChallengeService = async (
+    userId: number,
+    challengeId: number
+) => {
     return prisma.usersOnChallenges.create({
         data: { userId, challengeId },
     });

@@ -7,10 +7,10 @@ import {
     updateChallenge,
     joinChallenge,
     deleteChallenge,
-} from "../controllers/challengesController";
-import { isAdmin, isAuthenticated } from "../middlewares/authMiddleware";
-import taskRoutes from "./taskRoutes";
-import { getChallengeProgress } from "../controllers/progressController";
+} from "@controllers/challengesController";
+import { isAdmin, isAuthenticated } from "@middlewares/authMiddleware";
+import taskRoutes from "@routes/taskRoutes";
+import { getChallengeProgress } from "@controllers/progressController";
 
 const challengeRouter = Router();
 

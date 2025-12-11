@@ -1,5 +1,5 @@
-import prisma from "../config/bdd";
-import type { CreateNotificationInput } from "../schemas/notificationSchema";
+import prisma from "@config/bdd";
+import type { CreateNotificationInput } from "@schemas/notificationSchema";
 
 // ========================
 // === NOTIFICATIONS ======
@@ -74,7 +74,10 @@ export const countUnread = async (userId: number) => {
 };
 
 // Créer une notification de type spécifique (helpers)
-export const notifyNewChallenge = async (userId: number, challengeTitle: string) => {
+export const notifyNewChallenge = async (
+    userId: number,
+    challengeTitle: string
+) => {
     return create({
         userId,
         type: "new_challenge",
@@ -90,7 +93,10 @@ export const notifyBadgeAwarded = async (userId: number, badgeName: string) => {
     });
 };
 
-export const notifyChallengeCompleted = async (userId: number, challengeTitle: string) => {
+export const notifyChallengeCompleted = async (
+    userId: number,
+    challengeTitle: string
+) => {
     return create({
         userId,
         type: "completed",

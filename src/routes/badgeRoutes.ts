@@ -5,8 +5,8 @@ import {
     createBadge,
     updateBadge,
     deleteBadge,
-} from "../controllers/badgesController";
-import { isAdmin, isAuthenticated } from "../middlewares/authMiddleware";
+} from "@controllers/badgesController";
+import { isAdmin, isAuthenticated } from "@middlewares/authMiddleware";
 
 const badgeRouter = Router();
 

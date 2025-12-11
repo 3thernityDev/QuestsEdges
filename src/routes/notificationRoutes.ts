@@ -6,8 +6,8 @@ import {
     markAllAsRead,
     deleteNotification,
     clearReadNotifications,
-} from "../controllers/notificationsController";
-import { isAuthenticated } from "../middlewares/authMiddleware";
+} from "@controllers/notificationsController";
+import { isAuthenticated } from "@middlewares/authMiddleware";
 
 const notificationRouter = Router();
 

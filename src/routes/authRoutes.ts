@@ -5,9 +5,9 @@ import {
     getMe,
     logout,
     generateSystemToken,
-} from "../controllers/authController";
-import { isAuthenticated, isAdmin } from "../middlewares/authMiddleware";
-import { authLimiter } from "../config/rateLimit";
+} from "@controllers/authController";
+import { isAuthenticated, isAdmin } from "@middlewares/authMiddleware";
+import { authLimiter } from "@config/rateLimit";
 
 const authRouter = Router();
 

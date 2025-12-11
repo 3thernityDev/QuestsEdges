@@ -1,5 +1,5 @@
-import prisma from "../config/bdd";
-import type { CreateTaskInput, UpdateTaskInput } from "../schemas/taskSchema";
+import prisma from "@config/bdd";
+import type { CreateTaskInput, UpdateTaskInput } from "@schemas/taskSchema";
 
 // ========================
 // === TASKS SERVICES =====
@@ -45,7 +45,11 @@ export const create = async (challengeId: number, data: CreateTaskInput) => {
 };
 
 // Mettre à jour une tâche
-export const update = async (challengeId: number, taskId: number, data: UpdateTaskInput) => {
+export const update = async (
+    challengeId: number,
+    taskId: number,
+    data: UpdateTaskInput
+) => {
     // Vérifier que la tâche appartient bien au challenge
     const existing = await findById(challengeId, taskId);
     if (!existing) return null;

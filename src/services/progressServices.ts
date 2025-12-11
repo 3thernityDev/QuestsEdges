@@ -1,5 +1,5 @@
-import prisma from "../config/bdd";
-import type { UpdateProgressInput } from "../schemas/progressSchema";
+import prisma from "@config/bdd";
+import type { UpdateProgressInput } from "@schemas/progressSchema";
 
 // ========================
 // === PROGRESS SERVICES ==
@@ -21,7 +21,10 @@ export const findAllByUser = async (userId: number) => {
 };
 
 // Récupérer la progression d'un utilisateur sur un challenge spécifique
-export const findByUserAndChallenge = async (userId: number, challengeId: number) => {
+export const findByUserAndChallenge = async (
+    userId: number,
+    challengeId: number
+) => {
     return prisma.challengeProgress.findMany({
         where: {
             userId,
@@ -132,7 +135,11 @@ export const update = async (id: number, data: UpdateProgressInput) => {
 };
 
 // Incrémenter la progression (utilisé par le plugin MC)
-export const increment = async (userId: number, taskId: number, amount: number = 1) => {
+export const increment = async (
+    userId: number,
+    taskId: number,
+    amount: number = 1
+) => {
     // Récupérer ou créer la progression
     const progress = await findOrCreate(userId, taskId);
 
@@ -167,7 +174,10 @@ export const increment = async (userId: number, taskId: number, amount: number =
 };
 
 // Vérifier si un utilisateur a complété toutes les tâches d'un challenge
-export const checkChallengeCompletion = async (userId: number, challengeId: number) => {
+export const checkChallengeCompletion = async (
+    userId: number,
+    challengeId: number
+) => {
     // Récupérer toutes les tâches du challenge
     const tasks = await prisma.challengeTasks.findMany({
         where: { challengeId },
@@ -198,7 +208,10 @@ export const remove = async (id: number) => {
 };
 
 // Réinitialiser la progression d'un utilisateur sur un challenge
-export const resetByUserAndChallenge = async (userId: number, challengeId: number) => {
+export const resetByUserAndChallenge = async (
+    userId: number,
+    challengeId: number
+) => {
     return prisma.challengeProgress.deleteMany({
         where: {
             userId,

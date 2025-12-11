@@ -7,12 +7,23 @@
     "scripts": {
         "dev": "nodemon",
         "build": "tsc",
-        "start": "node dist/index.js",
+        "start": "node -r module-alias/register dist/index.js",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "lint": "tsc --noEmit"
     },
+    
+    "_moduleAliases": {
+        "@config": "dist/config",
+        "@controllers": "dist/controllers",
+        "@services": "dist/services",
+        "@routes": "dist/routes",
+        "@middlewares": "dist/middlewares",
+        "@schemas": "dist/schemas",
+        "@generated": "dist/generated"
+    },
+    
     "dependencies": {
         "@prisma/adapter-mariadb": "^7.1.0",
         "@prisma/client": "^7.1.0",
@@ -23,16 +34,16 @@
         "helmet": "^8.1.0",
         "jsonwebtoken": "^9.0.2",
         "mariadb": "^3.4.5",
-        "zod": "^4.1.13"
+        "zod": "^4.1.13",
+        "module-alias": "^2.2.3"
     },
     "devDependencies": {
-        "@types/bcrypt": "^6.0.0",
         "@types/cors": "^2.8.19",
         "@types/express": "^4.17.21",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "^20.11.19",
         "@types/supertest": "^6.0.3",
-        "bcrypt": "^6.0.0",
+        "bcrypt": "^5.1.1",
         "nodemon": "^3.1.11",
         "prisma": "^7.1.0",
         "supertest": "^7.1.4",

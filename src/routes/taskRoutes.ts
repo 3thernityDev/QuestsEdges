@@ -1,6 +1,6 @@
 import { Router } from "express";
-import * as tasksController from "../controllers/tasksController";
-import { isAuthenticated, isAdmin } from "../middlewares/authMiddleware";
+import * as tasksController from "@controllers/tasksController";
+import { isAuthenticated, isAdmin } from "@middlewares/authMiddleware";
 
 const router = Router({ mergeParams: true }); // mergeParams pour accéder à :challengeId
 

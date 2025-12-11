@@ -5,18 +5,18 @@ import {
     getUserByUuid,
     getUsers,
     updateUser,
-} from "../controllers/userController";
-import { isAdmin, isAuthenticated } from "../middlewares/authMiddleware";
+} from "@controllers/userController";
+import { isAdmin, isAuthenticated } from "@middlewares/authMiddleware";
 import {
     getUserProgress,
     getUserChallengeProgress,
     resetUserChallengeProgress,
-} from "../controllers/progressController";
+} from "@controllers/progressController";
 import {
     getUserBadges,
     awardBadgeToUser,
     revokeBadgeFromUser,
-} from "../controllers/badgesController";
+} from "@controllers/badgesController";
 
 const userRouter = Router();
 

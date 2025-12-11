@@ -1,5 +1,5 @@
-import prisma from "../config/bdd";
-import { CreateActionInput, UpdateActionInput } from "../schemas/actionSchema";
+import prisma from "@config/bdd";
+import { CreateActionInput, UpdateActionInput } from "@schemas/actionSchema";
 
 export const findAllActions = async () => {
     return prisma.actions.findMany();
@@ -23,7 +23,10 @@ export const createActionService = async (data: CreateActionInput) => {
     });
 };
 
-export const updateActionService = async (id: number, data: UpdateActionInput) => {
+export const updateActionService = async (
+    id: number,
+    data: UpdateActionInput
+) => {
     return prisma.actions.update({
         where: { id },
         data,

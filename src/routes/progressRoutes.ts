@@ -1,11 +1,11 @@
 import { Router } from "express";
-import * as progressController from "../controllers/progressController";
+import * as progressController from "@controllers/progressController";
 import {
     isAuthenticated,
     isAdmin,
     isSystem,
     isAdminOrSystem,
-} from "../middlewares/authMiddleware";
+} from "@middlewares/authMiddleware";
 
 const router = Router();
 

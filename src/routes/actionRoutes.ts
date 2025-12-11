@@ -5,8 +5,8 @@ import {
     createAction,
     updateAction,
     deleteAction,
-} from "../controllers/actionsController";
-import { isAdmin, isAuthenticated } from "../middlewares/authMiddleware";
+} from "@controllers/actionsController";
+import { isAdmin, isAuthenticated } from "@middlewares/authMiddleware";
 
 const actionRouter = Router();
 
