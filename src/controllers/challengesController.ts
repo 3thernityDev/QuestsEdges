@@ -133,7 +133,7 @@ export const joinChallenge = async (req: Request, res: Response): Promise<void> 
         const joinedChallenge = await joinChallengeService(req.user.id, challengeId);
         res.status(200).json({ message: 'Challenge rejoint', joinedChallenge });
     } catch (error) {
-        if ((error as any).code === 'P2002') {
+        if ((error as unknown as { code?: string }).code === 'P2002') {
             res.status(409).json({
                 message: 'Vous avez déjà rejoint ce challenge',
             });

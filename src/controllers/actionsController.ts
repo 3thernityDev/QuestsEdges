@@ -57,7 +57,7 @@ export const createAction = async (req: Request, res: Response): Promise<void> =
         res.status(201).json({ message: 'Action créée', action });
     } catch (error) {
         // Gestion erreur unique constraint (nom déjà utilisé)
-        if ((error as any).code === 'P2002') {
+        if ((error as unknown as { code?: string }).code === 'P2002') {
             res.status(409).json({
                 message: 'Une action avec ce nom existe déjà',
             });
@@ -99,7 +99,7 @@ export const updateAction = async (req: Request, res: Response): Promise<void> =
             action: updatedAction,
         });
     } catch (error) {
-        if ((error as any).code === 'P2002') {
+        if ((error as unknown as { code?: string }).code === 'P2002') {
             res.status(409).json({
                 message: 'Une action avec ce nom existe déjà',
             });
