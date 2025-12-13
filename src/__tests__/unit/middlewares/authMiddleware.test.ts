@@ -12,8 +12,8 @@ import {
     generateExpiredToken,
     generateInvalidToken,
     mockJwtPayload,
-    _mockAdminJwtPayload,
-    _mockSystemJwtPayload,
+    mockAdminJwtPayload,
+    mockSystemJwtPayload,
 } from '../../mocks/jwt.mock';
 
 // Mock prisma
@@ -31,8 +31,8 @@ describe('AuthMiddleware', () => {
             headers: {},
         };
         mockResponse = {
-            status: jest.fn().mockReturnThis() as unknown,
-            json: jest.fn().mockReturnThis() as unknown,
+            status: jest.fn().mockReturnThis() as Response['status'],
+            json: jest.fn().mockReturnThis() as Response['json'],
         };
         mockNext = jest.fn() as NextFunction;
     });

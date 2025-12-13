@@ -4,6 +4,7 @@ import express, { Express } from 'express';
 import challengeRoutes from '../../routes/challengeRoutes';
 import { prismaMock } from '../mocks/prisma.mock';
 import { getAuthHeaders, mockUser, mockAdmin, mockChallenge } from './helpers';
+import { ChallengeType } from '../../generated/prisma/enums';
 
 // Mock prisma and middlewares
 jest.mock('../../config/bdd', () => ({
@@ -114,6 +115,7 @@ describe('Challenge Routes Integration Tests', () => {
             prismaMock.challenges.create.mockResolvedValue({
                 ...mockChallenge,
                 ...newChallenge,
+                type: ChallengeType.hebdo,
             });
 
             const response = await request(app)

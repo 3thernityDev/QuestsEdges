@@ -26,8 +26,8 @@ describe('ChallengesController', () => {
             user: undefined,
         };
         mockResponse = {
-            status: jest.fn().mockReturnThis() as unknown,
-            json: jest.fn().mockReturnThis() as unknown,
+            status: jest.fn().mockReturnThis() as Response['status'],
+            json: jest.fn().mockReturnThis() as Response['json'],
         };
         jest.clearAllMocks();
     });

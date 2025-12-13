@@ -18,7 +18,8 @@ export const mockSystemJwtPayload = {
     role: 'sys' as const,
 };
 
-export const generateMockToken = (payload: typeof mockJwtPayload = mockJwtPayload): string => {
+type UserOrAdminPayload = typeof mockJwtPayload | typeof mockAdminJwtPayload;
+export const generateMockToken = (payload: UserOrAdminPayload = mockJwtPayload): string => {
     return jwt.sign(payload, process.env.JWT_SECRET || 'test-secret', {
         expiresIn: '7d',
     });
