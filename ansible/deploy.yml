@@ -1,36 +1,16 @@
 ---
-- name: Deploy QuestsEdges API to Production with Podman
+- name: Deploy QuestsEdges API to Production with Podman (Rootless)
   hosts: production
-  become: yes
   vars:
     app_name: questsedges
     app_dir: /home/srvPod/QuestsEdges
-    podman_user: srvPod
     repo_url: "https://github.com/{{ lookup('env', 'GITHUB_REPOSITORY') }}.git"
 
   tasks:
-    - name: Install required system packages
-      apt:
-        name:
-          - curl
-          - git
-          - podman
-          - podman-compose
-        state: present
-        update_cache: yes
-
-    - name: Ensure srvPod user exists
-      user:
-        name: "{{ podman_user }}"
-        state: present
-        create_home: yes
-
     - name: Create application directory
       file:
         path: "{{ app_dir }}"
         state: directory
-        owner: "{{ podman_user }}"
-        group: "{{ podman_user }}"
         mode: '0755'
 
     - name: Clone/Update repository
@@ -39,39 +19,30 @@
         dest: "{{ app_dir }}"
         version: "{{ app_version | default('main') }}"
         force: yes
-      become_user: "{{ podman_user }}"
 
     - name: Copy .env file
       copy:
         src: prod.env
         dest: "{{ app_dir }}/.env"
-        owner: "{{ podman_user }}"
-        group: "{{ podman_user }}"
         mode: '0600'
 
     - name: Stop existing containers
       command: podman-compose -f compose.prod.yml down
       args:
         chdir: "{{ app_dir }}"
-      become_user: "{{ podman_user }}"
       ignore_errors: yes
 
     - name: Remove old images to force rebuild
       command: podman image prune -af
-      become_user: "{{ podman_user }}"
       ignore_errors: yes
 
     - name: Build and start containers
       command: podman-compose -f compose.prod.yml up -d --build
       args:
         chdir: "{{ app_dir }}"
-      become_user: "{{ podman_user }}"
-      environment:
-        PATH: "/usr/bin:/usr/local/bin:{{ ansible_env.PATH }}"
 
     - name: Wait for API container to be healthy
       command: podman healthcheck run questsedges-api
-      become_user: "{{ podman_user }}"
       register: healthcheck
       retries: 10
       delay: 10
@@ -80,7 +51,6 @@
 
     - name: Run Prisma migrations
       command: podman exec questsedges-api npx prisma migrate deploy
-      become_user: "{{ podman_user }}"
       register: migration_result
       retries: 3
       delay: 5
@@ -102,7 +72,6 @@
 
     - name: Show container status
       command: podman ps -a --filter "name=questsedges"
-      become_user: "{{ podman_user }}"
       register: container_status
 
     - name: Display container status
