@@ -12,8 +12,6 @@ import {
     generateExpiredToken,
     generateInvalidToken,
     mockJwtPayload,
-    mockAdminJwtPayload,
-    mockSystemJwtPayload,
 } from '../../mocks/jwt.mock';
 
 // Mock prisma
