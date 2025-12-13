@@ -84,7 +84,9 @@ jobs:
           EOF
 
       - name: Create production env file
-        run: echo "${{ secrets.PROD_ENV_FILE }}" > ansible/prod.env
+        env:
+          PROD_ENV_CONTENT: ${{ secrets.PROD_ENV_FILE }}
+        run: printf '%s\n' "$PROD_ENV_CONTENT" > ansible/prod.env
 
       - name: Run Ansible deployment
         env:
