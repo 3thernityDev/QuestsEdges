@@ -23,6 +23,7 @@ services:
       - AZURE_SECRET=${AZURE_SECRET}
       - FRONTEND_URL=${FRONTEND_URL}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - REDIRECT_URI=${REDIRECT_URI}
     depends_on:
       db:
         condition: service_healthy
