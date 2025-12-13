@@ -39,11 +39,7 @@ describe('AuthMiddleware', () => {
 
     describe('isAuthenticated', () => {
         test('should return 401 when no authorization header is present', async () => {
-            await isAuthenticated(
-                mockRequest as Request,
-                mockResponse as Response,
-                mockNext
-            );
+            await isAuthenticated(mockRequest as Request, mockResponse as Response, mockNext);
 
             expect(mockResponse.status).toHaveBeenCalledWith(401);
             expect(mockResponse.json).toHaveBeenCalledWith({
@@ -57,11 +53,7 @@ describe('AuthMiddleware', () => {
                 authorization: 'InvalidToken',
             };
 
-            await isAuthenticated(
-                mockRequest as Request,
-                mockResponse as Response,
-                mockNext
-            );
+            await isAuthenticated(mockRequest as Request, mockResponse as Response, mockNext);
 
             expect(mockResponse.status).toHaveBeenCalledWith(401);
             expect(mockResponse.json).toHaveBeenCalledWith({
@@ -75,11 +67,7 @@ describe('AuthMiddleware', () => {
                 authorization: `Bearer ${generateInvalidToken()}`,
             };
 
-            await isAuthenticated(
-                mockRequest as Request,
-                mockResponse as Response,
-                mockNext
-            );
+            await isAuthenticated(mockRequest as Request, mockResponse as Response, mockNext);
 
             expect(mockResponse.status).toHaveBeenCalledWith(401);
             expect(mockResponse.json).toHaveBeenCalledWith({
@@ -93,11 +81,7 @@ describe('AuthMiddleware', () => {
                 authorization: `Bearer ${generateExpiredToken()}`,
             };
 
-            await isAuthenticated(
-                mockRequest as Request,
-                mockResponse as Response,
-                mockNext
-            );
+            await isAuthenticated(mockRequest as Request, mockResponse as Response, mockNext);
 
             expect(mockResponse.status).toHaveBeenCalledWith(401);
             expect(mockResponse.json).toHaveBeenCalledWith({
@@ -114,11 +98,7 @@ describe('AuthMiddleware', () => {
 
             prismaMock.user.findUnique.mockResolvedValue(null);
 
-            await isAuthenticated(
-                mockRequest as Request,
-                mockResponse as Response,
-                mockNext
-            );
+            await isAuthenticated(mockRequest as Request, mockResponse as Response, mockNext);
 
             expect(mockResponse.status).toHaveBeenCalledWith(401);
             expect(mockResponse.json).toHaveBeenCalledWith({
@@ -149,11 +129,7 @@ describe('AuthMiddleware', () => {
 
             prismaMock.user.findUnique.mockResolvedValue(mockUser);
 
-            await isAuthenticated(
-                mockRequest as Request,
-                mockResponse as Response,
-                mockNext
-            );
+            await isAuthenticated(mockRequest as Request, mockResponse as Response, mockNext);
 
             expect(mockRequest.user).toEqual(mockUser);
             expect(mockNext).toHaveBeenCalled();

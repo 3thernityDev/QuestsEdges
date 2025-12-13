@@ -82,10 +82,7 @@ describe('ChallengesServices', () => {
 
     describe('findActiveChallenges', () => {
         test('should return challenges with no expiration or future expiration', async () => {
-            const activeChallenges = [
-                mockChallenge,
-                { ...mockChallenge, id: 2, expiresAt: null },
-            ];
+            const activeChallenges = [mockChallenge, { ...mockChallenge, id: 2, expiresAt: null }];
             prismaMock.challenges.findMany.mockResolvedValue(activeChallenges);
 
             const result = await findActiveChallenges();
