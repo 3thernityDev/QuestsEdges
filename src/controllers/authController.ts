@@ -6,7 +6,7 @@ import prisma from '../config/bdd';
 const MICROSOFT_CLIENT_ID = process.env.AZURE_CLIENT_ID!;
 const MICROSOFT_CLIENT_SECRET = process.env.AZURE_SECRET!;
 const REDIRECT_URI =
-    process.env.REDIRECT_URI || 'http://localhost:3000/api/auth/microsoft/callback';
+    process.env.REDIRECT_URI || 'https://gamingandchill.fr/api/auth/microsoft/callback';
 
 // ======================================================
 // ========== MICROSOFT OAUTH / XBOX LIVE ===============

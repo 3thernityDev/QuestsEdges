@@ -15,13 +15,13 @@ const envSchema = z.object({
     // Microsoft OAuth
     AZURE_CLIENT_ID: z.string().min(1, 'AZURE_CLIENT_ID est requise'),
     AZURE_SECRET: z.string().min(1, 'AZURE_SECRET est requise'),
-    REDIRECT_URI: z.string().url().optional(),
+    REDIRECT_URI: z.string().url({ message: 'REDIRECT_URI doit être une URL valide' }),
 
     // Frontend
-    FRONTEND_URL: z.string().url().optional(),
+    FRONTEND_URL: z.string().url({ message: 'FRONTEND_URL doit être une URL valide' }),
 
     // CORS
-    ALLOWED_ORIGINS: z.string().optional(),
+    ALLOWED_ORIGINS: z.string().min(1, 'ALLOWED_ORIGINS est requise'),
 });
 
 // Type TypeScript derive du schema
