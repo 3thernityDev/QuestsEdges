@@ -1,0 +1,145 @@
+---
+- name: Deploy QuestsEdges API to Production
+  hosts: production
+  become: yes
+  vars:
+    app_name: questsedges-api
+    app_dir: /opt/{{ app_name }}
+    node_version: "20"
+    repo_url: "https://github.com/{{ lookup('env', 'GITHUB_REPOSITORY') }}.git"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required system packages
+      apt:
+        name:
+          - curl
+          - git
+          - build-essential
+        state: present
+
+    - name: Check if Node.js is installed
+      command: node --version
+      register: node_installed
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Install Node.js via NodeSource
+      block:
+        - name: Download NodeSource setup script
+          get_url:
+            url: "https://deb.nodesource.com/setup_{{ node_version }}.x"
+            dest: /tmp/nodesource_setup.sh
+            mode: '0755'
+
+        - name: Run NodeSource setup script
+          command: bash /tmp/nodesource_setup.sh
+
+        - name: Install Node.js
+          apt:
+            name: nodejs
+            state: present
+      when: node_installed.rc != 0 or node_version not in node_installed.stdout
+
+    - name: Install PM2 globally
+      npm:
+        name: pm2
+        global: yes
+        state: present
+
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Clone/Update repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ app_version | default('main') }}"
+        force: yes
+      become_user: www-data
+
+    - name: Copy .env file
+      copy:
+        src: prod.env
+        dest: "{{ app_dir }}/.env"
+        owner: www-data
+        group: www-data
+        mode: '0600'
+
+    - name: Install npm dependencies
+      npm:
+        path: "{{ app_dir }}"
+        state: present
+        production: yes
+      become_user: www-data
+
+    - name: Generate Prisma client
+      command: npx prisma generate
+      args:
+        chdir: "{{ app_dir }}"
+      become_user: www-data
+
+    - name: Run Prisma migrations
+      command: npx prisma migrate deploy
+      args:
+        chdir: "{{ app_dir }}"
+      become_user: www-data
+
+    - name: Build the application
+      command: npm run build
+      args:
+        chdir: "{{ app_dir }}"
+      become_user: www-data
+
+    - name: Create PM2 ecosystem file
+      template:
+        src: templates/ecosystem.config.js.j2
+        dest: "{{ app_dir }}/ecosystem.config.cjs"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Stop existing PM2 process
+      command: pm2 delete {{ app_name }}
+      args:
+        chdir: "{{ app_dir }}"
+      ignore_errors: yes
+      become_user: www-data
+
+    - name: Start application with PM2
+      command: pm2 start ecosystem.config.cjs
+      args:
+        chdir: "{{ app_dir }}"
+      become_user: www-data
+
+    - name: Save PM2 process list
+      command: pm2 save
+      become_user: www-data
+
+    - name: Setup PM2 startup script
+      command: pm2 startup systemd -u www-data --hp /var/www
+      register: pm2_startup
+      changed_when: "'already' not in pm2_startup.stdout"
+
+    - name: Health check
+      uri:
+        url: "http://localhost:3000/health"
+        method: GET
+        status_code: 200
+      retries: 5
+      delay: 5
+      register: health_check
+
+    - name: Display deployment status
+      debug:
+        msg: "Deployment successful! Application is running and healthy."
+      when: health_check.status == 200

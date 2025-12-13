@@ -1,5 +1,5 @@
-import prisma from "../config/bdd";
-import { CreateChallengeInput, UpdateChallengeInput } from "../schemas/challengeSchema";
+import prisma from '../config/bdd';
+import { CreateChallengeInput, UpdateChallengeInput } from '../schemas/challengeSchema';
 
 export const findAllChallenges = async () => {
     return prisma.challenges.findMany();

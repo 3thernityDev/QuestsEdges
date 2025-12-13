@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 
 // Interface pour les erreurs personnalisees
 export interface AppError extends Error {
@@ -7,10 +7,7 @@ export interface AppError extends Error {
 }
 
 // Creer une erreur personnalisee
-export const createError = (
-    message: string,
-    statusCode: number = 500
-): AppError => {
+export const createError = (message: string, statusCode: number = 500): AppError => {
     const error: AppError = new Error(message);
     error.statusCode = statusCode;
     error.isOperational = true;
@@ -22,10 +19,10 @@ export const errorHandler = (
     err: AppError,
     req: Request,
     res: Response,
-    next: NextFunction
+    _next: NextFunction
 ): void => {
     const statusCode = err.statusCode || 500;
-    const isProduction = process.env.NODE_ENV === "production";
+    const isProduction = process.env.NODE_ENV === 'production';
 
     // Log de l'erreur (toujours en dev, erreurs critiques en prod)
     if (!isProduction || statusCode >= 500) {
@@ -40,26 +37,17 @@ export const errorHandler = (
 
     // Reponse au client
     res.status(statusCode).json({
-        status: "error",
+        status: 'error',
         statusCode,
-        message: isProduction && statusCode === 500
-            ? "Erreur interne du serveur"
-            : err.message,
+        message: isProduction && statusCode === 500 ? 'Erreur interne du serveur' : err.message,
         // Stack trace uniquement en developpement
         ...(isProduction ? {} : { stack: err.stack }),
     });
 };
 
 // Middleware pour les routes non trouvees (404)
-export const notFoundHandler = (
-    req: Request,
-    res: Response,
-    next: NextFunction
-): void => {
-    const error = createError(
-        `Route non trouvee: ${req.method} ${req.originalUrl}`,
-        404
-    );
+export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
+    const error = createError(`Route non trouvee: ${req.method} ${req.originalUrl}`, 404);
     next(error);
 };
 

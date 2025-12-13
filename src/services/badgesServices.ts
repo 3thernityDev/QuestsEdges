@@ -1,5 +1,5 @@
-import prisma from "../config/bdd";
-import type { CreateBadgeInput, UpdateBadgeInput } from "../schemas/badgeSchema";
+import prisma from '../config/bdd';
+import type { CreateBadgeInput, UpdateBadgeInput } from '../schemas/badgeSchema';
 
 // ========================
 // === BADGES SERVICES ====

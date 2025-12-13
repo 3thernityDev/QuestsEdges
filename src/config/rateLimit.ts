@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit from 'express-rate-limit';
 
 // Rate limiter global - limite les requetes par IP
 export const globalLimiter = rateLimit({
@@ -6,7 +6,7 @@ export const globalLimiter = rateLimit({
     max: 100, // 100 requetes par fenetre de 15 min
     message: {
         status: 429,
-        message: "Trop de requetes, veuillez reessayer plus tard",
+        message: 'Trop de requetes, veuillez reessayer plus tard',
     },
     standardHeaders: true, // Retourne les headers `RateLimit-*`
     legacyHeaders: false, // Desactive les headers `X-RateLimit-*`
@@ -18,7 +18,7 @@ export const authLimiter = rateLimit({
     max: 10, // 10 tentatives par fenetre de 15 min
     message: {
         status: 429,
-        message: "Trop de tentatives de connexion, veuillez reessayer dans 15 minutes",
+        message: 'Trop de tentatives de connexion, veuillez reessayer dans 15 minutes',
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -42,7 +42,7 @@ export const systemLimiter = rateLimit({
     max: 500, // 500 requetes par minute (le plugin envoie beaucoup de requetes)
     message: {
         status: 429,
-        message: "Rate limit atteint pour le systeme",
+        message: 'Rate limit atteint pour le systeme',
     },
     standardHeaders: true,
     legacyHeaders: false,
