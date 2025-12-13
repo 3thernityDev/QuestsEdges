@@ -29,20 +29,20 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy package files and install production dependencies only
+# Copy package files and install ALL dependencies (tsx needed for runtime)
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci && npm cache clean --force
 
 # Copy Prisma schema and generate client
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
+COPY tsconfig.json ./
 ARG DATABASE_URL=mysql://user:pass@localhost:3306/db
 ENV DATABASE_URL=${DATABASE_URL}
 RUN npx prisma generate
 
-# Copy built application from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/generated ./src/generated
+# Copy source code (tsx runs TypeScript directly)
+COPY --from=builder /app/src ./src
 
 # Change ownership to non-root user
 RUN chown -R nodejs:nodejs /app
@@ -56,5 +56,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
-# Start application
-CMD ["node", "dist/index.js"]
+# Start application with tsx (handles ESM imports properly)
+CMD ["npx", "tsx", "src/index.ts"]
