@@ -1,35 +1,26 @@
-import { Request, Response } from "express";
+import { Request, Response } from 'express';
 import {
     findAllActions,
     findActionById,
     createActionService,
     updateActionService,
     deleteActionService,
-} from "../services/actionsServices";
-import {
-    createActionSchema,
-    updateActionSchema,
-} from "../schemas/actionSchema";
+} from '../services/actionsServices';
+import { createActionSchema, updateActionSchema } from '../schemas/actionSchema';
 
-export const getAllActions = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const getAllActions = async (req: Request, res: Response): Promise<void> => {
     try {
         const actions = await findAllActions();
-        res.status(200).json({ message: "Liste des actions", actions });
+        res.status(200).json({ message: 'Liste des actions', actions });
     } catch (error) {
         res.status(500).json({
-            message: "Erreur lors de la récupération des actions",
+            message: 'Erreur lors de la récupération des actions',
             error: (error as Error).message,
         });
     }
 };
 
-export const getActionById = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const getActionById = async (req: Request, res: Response): Promise<void> => {
     try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) {
@@ -38,7 +29,7 @@ export const getActionById = async (
         }
         const action = await findActionById(id);
         if (!action) {
-            res.status(404).json({ message: "Action non trouvée" });
+            res.status(404).json({ message: 'Action non trouvée' });
             return;
         }
         res.status(200).json({ message: "Détails de l'action", action });
@@ -50,28 +41,25 @@ export const getActionById = async (
     }
 };
 
-export const createAction = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const createAction = async (req: Request, res: Response): Promise<void> => {
     try {
         // Valider les données avec Zod
         const result = createActionSchema.safeParse(req.body);
         if (!result.success) {
             res.status(400).json({
-                message: "Données invalides",
+                message: 'Données invalides',
                 errors: result.error,
             });
             return;
         }
 
         const action = await createActionService(result.data);
-        res.status(201).json({ message: "Action créée", action });
+        res.status(201).json({ message: 'Action créée', action });
     } catch (error) {
         // Gestion erreur unique constraint (nom déjà utilisé)
-        if ((error as any).code === "P2002") {
+        if ((error as any).code === 'P2002') {
             res.status(409).json({
-                message: "Une action avec ce nom existe déjà",
+                message: 'Une action avec ce nom existe déjà',
             });
             return;
         }
@@ -82,10 +70,7 @@ export const createAction = async (
     }
 };
 
-export const updateAction = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const updateAction = async (req: Request, res: Response): Promise<void> => {
     try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) {
@@ -96,7 +81,7 @@ export const updateAction = async (
         const result = updateActionSchema.safeParse(req.body);
         if (!result.success) {
             res.status(400).json({
-                message: "Données invalides",
+                message: 'Données invalides',
                 errors: result.error,
             });
             return;
@@ -104,19 +89,19 @@ export const updateAction = async (
 
         const action = await findActionById(id);
         if (!action) {
-            res.status(404).json({ message: "Action non trouvée" });
+            res.status(404).json({ message: 'Action non trouvée' });
             return;
         }
 
         const updatedAction = await updateActionService(id, result.data);
         res.status(200).json({
-            message: "Action mise à jour",
+            message: 'Action mise à jour',
             action: updatedAction,
         });
     } catch (error) {
-        if ((error as any).code === "P2002") {
+        if ((error as any).code === 'P2002') {
             res.status(409).json({
-                message: "Une action avec ce nom existe déjà",
+                message: 'Une action avec ce nom existe déjà',
             });
             return;
         }
@@ -127,10 +112,7 @@ export const updateAction = async (
     }
 };
 
-export const deleteAction = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const deleteAction = async (req: Request, res: Response): Promise<void> => {
     try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) {
@@ -140,12 +122,12 @@ export const deleteAction = async (
 
         const action = await findActionById(id);
         if (!action) {
-            res.status(404).json({ message: "Action non trouvée" });
+            res.status(404).json({ message: 'Action non trouvée' });
             return;
         }
 
         await deleteActionService(id);
-        res.status(200).json({ message: "Action supprimée" });
+        res.status(200).json({ message: 'Action supprimée' });
     } catch (error) {
         res.status(500).json({
             message: "Erreur lors de la suppression de l'action",

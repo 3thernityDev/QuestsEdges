@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // ========================
 // === ACTION SCHEMAS =====
@@ -8,8 +8,8 @@ import { z } from "zod";
 export const createActionSchema = z.object({
     name: z
         .string()
-        .min(2, "Le nom doit faire au moins 2 caractères")
-        .max(50, "Le nom ne peut pas dépasser 50 caractères"),
+        .min(2, 'Le nom doit faire au moins 2 caractères')
+        .max(50, 'Le nom ne peut pas dépasser 50 caractères'),
     description: z.string().optional(),
     parameters: z.any().optional(), // JSON libre pour les paramètres
 });

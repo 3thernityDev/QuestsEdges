@@ -1,5 +1,5 @@
-import prisma from "../config/bdd";
-import type { UpdateProgressInput } from "../schemas/progressSchema";
+import prisma from '../config/bdd';
+import type { UpdateProgressInput } from '../schemas/progressSchema';
 
 // ========================
 // === PROGRESS SERVICES ==

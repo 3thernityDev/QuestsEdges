@@ -1,5 +1,5 @@
-import prisma from "../config/bdd";
-import type { CreateTaskInput, UpdateTaskInput } from "../schemas/taskSchema";
+import prisma from '../config/bdd';
+import type { CreateTaskInput, UpdateTaskInput } from '../schemas/taskSchema';
 
 // ========================
 // === TASKS SERVICES =====
@@ -12,7 +12,7 @@ export const findAllByChallenge = async (challengeId: number) => {
         include: {
             action: true, // Inclure les détails de l'action
         },
-        orderBy: { id: "asc" },
+        orderBy: { id: 'asc' },
     });
 };
 
