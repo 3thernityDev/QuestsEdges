@@ -3,10 +3,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import helmet from 'helmet';
+import * as swaggerUi from 'swagger-ui-express';
 import prisma from './config/bdd';
 import corsMiddleware from './config/cors';
 import { globalLimiter } from './config/rateLimit';
 import { getEnv } from './config/env';
+import { swaggerSpec } from './config/swagger';
 import { errorHandler, notFoundHandler } from './middlewares/errorMiddleware';
 import userRouter from './routes/userRoutes';
 import authRouter from './routes/authRoutes';
@@ -22,8 +24,12 @@ const env = getEnv();
 const app = express();
 const PORT = env.PORT || 3000;
 
-// Security headers
-app.use(helmet());
+// Security headers (désactiver CSP pour Swagger)
+app.use(
+    helmet({
+        contentSecurityPolicy: false,
+    })
+);
 
 // CORS
 app.use(corsMiddleware);
@@ -31,11 +37,59 @@ app.use(corsMiddleware);
 // Rate limiting global
 app.use(globalLimiter);
 
+// Body parser (doit être avant Swagger)
+app.use(express.json());
+
+/**
+ * @openapi
+ * /:
+ *   get:
+ *     summary: Page d'accueil de l'API
+ *     tags: [Health]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: API opérationnelle
+ */
 app.get('/', (req, res) => {
     res.send('API QuestsEdges running !');
 });
 
-// Route de test pour la DB
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Vérifier l'état de l'API et de la base de données
+ *     tags: [Health]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: API et base de données opérationnelles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 database:
+ *                   type: string
+ *                   example: connected
+ *       500:
+ *         description: Erreur de connexion à la base de données
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 database:
+ *                   type: string
+ *                   example: disconnected
+ */
 app.get('/health', async (req, res) => {
     try {
         await prisma.$connect();
@@ -45,7 +99,8 @@ app.get('/health', async (req, res) => {
     }
 });
 
-app.use(express.json());
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/users', userRouter);
 app.use('/api/auth', authRouter);
