@@ -1,5 +1,5 @@
-import prisma from "../config/bdd";
-import type { CreateNotificationInput } from "../schemas/notificationSchema";
+import prisma from '../config/bdd';
+import type { CreateNotificationInput } from '../schemas/notificationSchema';
 
 // ========================
 // === NOTIFICATIONS ======
@@ -13,7 +13,7 @@ export const findByUser = async (userId: number, includeRead = false) => {
             ...(includeRead ? {} : { isRead: false }),
         },
         orderBy: {
-            createdAt: "desc",
+            createdAt: 'desc',
         },
     });
 };
@@ -77,7 +77,7 @@ export const countUnread = async (userId: number) => {
 export const notifyNewChallenge = async (userId: number, challengeTitle: string) => {
     return create({
         userId,
-        type: "new_challenge",
+        type: 'new_challenge',
         message: `Nouveau challenge disponible : ${challengeTitle}`,
     });
 };
@@ -85,7 +85,7 @@ export const notifyNewChallenge = async (userId: number, challengeTitle: string)
 export const notifyBadgeAwarded = async (userId: number, badgeName: string) => {
     return create({
         userId,
-        type: "badge",
+        type: 'badge',
         message: `Félicitations ! Vous avez obtenu le badge "${badgeName}"`,
     });
 };
@@ -93,7 +93,7 @@ export const notifyBadgeAwarded = async (userId: number, badgeName: string) => {
 export const notifyChallengeCompleted = async (userId: number, challengeTitle: string) => {
     return create({
         userId,
-        type: "completed",
+        type: 'completed',
         message: `Challenge terminé : ${challengeTitle}`,
     });
 };

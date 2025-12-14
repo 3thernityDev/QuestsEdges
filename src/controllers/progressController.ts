@@ -1,6 +1,6 @@
-import type { Request, Response } from "express";
-import * as progressServices from "../services/progressServices";
-import { updateProgressSchema, incrementProgressSchema } from "../schemas/progressSchema";
+import type { Request, Response } from 'express';
+import * as progressServices from '../services/progressServices';
+import { updateProgressSchema, incrementProgressSchema } from '../schemas/progressSchema';
 
 // ========================
 // === PROGRESS CONTROLLER =
@@ -11,7 +11,7 @@ export const getUserProgress = async (req: Request, res: Response): Promise<void
     const userId = parseInt(req.params.userId);
 
     if (isNaN(userId)) {
-        res.status(400).json({ message: "ID utilisateur invalide" });
+        res.status(400).json({ message: 'ID utilisateur invalide' });
         return;
     }
 
@@ -25,12 +25,12 @@ export const getUserChallengeProgress = async (req: Request, res: Response): Pro
     const challengeId = parseInt(req.params.challengeId);
 
     if (isNaN(userId) || isNaN(challengeId)) {
-        res.status(400).json({ message: "ID invalide" });
+        res.status(400).json({ message: 'ID invalide' });
         return;
     }
 
     const progress = await progressServices.findByUserAndChallenge(userId, challengeId);
-    
+
     // Vérifier si le challenge est complété
     const isCompleted = await progressServices.checkChallengeCompletion(userId, challengeId);
 
@@ -45,7 +45,7 @@ export const getChallengeProgress = async (req: Request, res: Response): Promise
     const challengeId = parseInt(req.params.challengeId);
 
     if (isNaN(challengeId)) {
-        res.status(400).json({ message: "ID du challenge invalide" });
+        res.status(400).json({ message: 'ID du challenge invalide' });
         return;
     }
 
@@ -58,13 +58,13 @@ export const getProgressById = async (req: Request, res: Response): Promise<void
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-        res.status(400).json({ message: "ID invalide" });
+        res.status(400).json({ message: 'ID invalide' });
         return;
     }
 
     const progress = await progressServices.findById(id);
     if (!progress) {
-        res.status(404).json({ message: "Progression non trouvée" });
+        res.status(404).json({ message: 'Progression non trouvée' });
         return;
     }
 
@@ -76,14 +76,14 @@ export const updateProgress = async (req: Request, res: Response): Promise<void>
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-        res.status(400).json({ message: "ID invalide" });
+        res.status(400).json({ message: 'ID invalide' });
         return;
     }
 
     const parsed = updateProgressSchema.safeParse(req.body);
     if (!parsed.success) {
         res.status(400).json({
-            message: "Données invalides",
+            message: 'Données invalides',
             errors: parsed.error.flatten().fieldErrors,
         });
         return;
@@ -91,7 +91,7 @@ export const updateProgress = async (req: Request, res: Response): Promise<void>
 
     const existing = await progressServices.findById(id);
     if (!existing) {
-        res.status(404).json({ message: "Progression non trouvée" });
+        res.status(404).json({ message: 'Progression non trouvée' });
         return;
     }
 
@@ -104,7 +104,7 @@ export const incrementProgress = async (req: Request, res: Response): Promise<vo
     const { userId, taskId } = req.body;
 
     if (!userId || !taskId) {
-        res.status(400).json({ message: "userId et taskId sont requis" });
+        res.status(400).json({ message: 'userId et taskId sont requis' });
         return;
     }
 
@@ -112,7 +112,7 @@ export const incrementProgress = async (req: Request, res: Response): Promise<vo
     const parsedTaskId = parseInt(taskId);
 
     if (isNaN(parsedUserId) || isNaN(parsedTaskId)) {
-        res.status(400).json({ message: "IDs invalides" });
+        res.status(400).json({ message: 'IDs invalides' });
         return;
     }
 
@@ -121,7 +121,7 @@ export const incrementProgress = async (req: Request, res: Response): Promise<vo
 
     const updated = await progressServices.increment(parsedUserId, parsedTaskId, amount);
     if (!updated) {
-        res.status(404).json({ message: "Utilisateur ou tâche non trouvé(e)" });
+        res.status(404).json({ message: 'Utilisateur ou tâche non trouvé(e)' });
         return;
     }
 
@@ -140,13 +140,13 @@ export const deleteProgress = async (req: Request, res: Response): Promise<void>
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
-        res.status(400).json({ message: "ID invalide" });
+        res.status(400).json({ message: 'ID invalide' });
         return;
     }
 
     const existing = await progressServices.findById(id);
     if (!existing) {
-        res.status(404).json({ message: "Progression non trouvée" });
+        res.status(404).json({ message: 'Progression non trouvée' });
         return;
     }
 
@@ -160,7 +160,7 @@ export const resetUserChallengeProgress = async (req: Request, res: Response): P
     const challengeId = parseInt(req.params.challengeId);
 
     if (isNaN(userId) || isNaN(challengeId)) {
-        res.status(400).json({ message: "ID invalide" });
+        res.status(400).json({ message: 'ID invalide' });
         return;
     }
 

@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const createNotificationSchema = z.object({
     userId: z.number().int().positive(),
-    type: z.enum(["new_challenge", "accepted", "completed", "reward", "badge"]),
+    type: z.enum(['new_challenge', 'accepted', 'completed', 'reward', 'badge']),
     message: z.string().min(1),
 });
 

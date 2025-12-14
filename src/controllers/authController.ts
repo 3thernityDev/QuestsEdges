@@ -1,14 +1,12 @@
-import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
-import prisma from "../config/bdd";
+import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import prisma from '../config/bdd';
 
 // Configuration OAuth Microsoft
 const MICROSOFT_CLIENT_ID = process.env.AZURE_CLIENT_ID!;
 const MICROSOFT_CLIENT_SECRET = process.env.AZURE_SECRET!;
 const REDIRECT_URI =
-    process.env.REDIRECT_URI ||
-    "http://localhost:3000/api/auth/microsoft/callback";
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+    process.env.REDIRECT_URI || 'https://gamingandchill.fr/api/auth/microsoft/callback';
 
 // ======================================================
 // ========== MICROSOFT OAUTH / XBOX LIVE ===============
@@ -16,7 +14,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 // GET /api/auth/microsoft - Redirige vers Microsoft
 export const getMicrosoftAuthUrl = (req: Request, res: Response): void => {
-    const scope = "XboxLive.signin offline_access openid email profile";
+    const scope = 'XboxLive.signin offline_access openid email profile';
 
     const authUrl =
         `https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?` +
@@ -30,10 +28,7 @@ export const getMicrosoftAuthUrl = (req: Request, res: Response): void => {
 };
 
 // GET /api/auth/microsoft/callback - Callback après login
-export const microsoftCallback = async (
-    req: Request,
-    res: Response
-): Promise<void> => {
+export const microsoftCallback = async (req: Request, res: Response): Promise<void> => {
     try {
         const code = req.query.code as string;
 
@@ -68,21 +63,18 @@ export const microsoftCallback = async (
             create: {
                 uuid_mc: minecraftProfile.id,
                 username: minecraftProfile.name,
-                email:
-                    emailFromToken || `${minecraftProfile.id}@minecraft.local`,
+                email: emailFromToken || `${minecraftProfile.id}@minecraft.local`,
             },
         });
 
         // 6. Générer un JWT
-        const token = jwt.sign(
-            { userId: user.id, role: user.role },
-            process.env.JWT_SECRET!,
-            { expiresIn: "7d" }
-        );
+        const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET!, {
+            expiresIn: '7d',
+        });
 
         // 7. Retourner le token en JSON (pas de frontend pour l'instant)
         res.status(200).json({
-            message: "Authentification réussie",
+            message: 'Authentification réussie',
             token,
             user: {
                 id: user.id,
@@ -106,7 +98,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
         const user = req.user;
 
         if (!user) {
-            res.status(401).json({ message: "Non authentifié" });
+            res.status(401).json({ message: 'Non authentifié' });
             return;
         }
 
@@ -122,7 +114,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
         });
     } catch (error) {
         res.status(500).json({
-            message: "Erreur lors de la récupération du profil",
+            message: 'Erreur lors de la récupération du profil',
             error: (error as Error).message,
         });
     }
@@ -132,28 +124,28 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
 export const logout = (req: Request, res: Response): void => {
     // Le JWT est stateless, donc on ne peut pas vraiment l'invalider côté serveur
     // Le frontend doit simplement supprimer le token
-    res.status(200).json({ message: "Déconnexion réussie" });
+    res.status(200).json({ message: 'Déconnexion réussie' });
 };
 
 // POST /api/auth/system-token - Génère un token pour le système (plugin MC)
 export const generateSystemToken = async (req: Request, res: Response): Promise<void> => {
     try {
         // UUID système fixe (ne correspond à aucun vrai joueur MC)
-        const SYSTEM_UUID = "00000000-0000-0000-0000-000000000000";
-        const SYSTEM_USERNAME = "MC_SYSTEM";
-        const SYSTEM_EMAIL = "system@mc-challenges.local";
+        const SYSTEM_UUID = '00000000-0000-0000-0000-000000000000';
+        const SYSTEM_USERNAME = 'MC_SYSTEM';
+        const SYSTEM_EMAIL = 'system@mc-challenges.local';
 
         // Créer ou récupérer l'utilisateur système
         const systemUser = await prisma.user.upsert({
             where: { uuid_mc: SYSTEM_UUID },
             update: {
-                role: "sys",
+                role: 'sys',
             },
             create: {
                 uuid_mc: SYSTEM_UUID,
                 username: SYSTEM_USERNAME,
                 email: SYSTEM_EMAIL,
-                role: "sys",
+                role: 'sys',
             },
         });
 
@@ -161,13 +153,13 @@ export const generateSystemToken = async (req: Request, res: Response): Promise<
         const token = jwt.sign(
             { userId: systemUser.id, role: systemUser.role },
             process.env.JWT_SECRET!,
-            { expiresIn: "365d" }
+            { expiresIn: '365d' }
         );
 
         res.status(200).json({
-            message: "Token système généré avec succès",
+            message: 'Token système généré avec succès',
             token,
-            expiresIn: "365 jours",
+            expiresIn: '365 jours',
             user: {
                 id: systemUser.id,
                 username: systemUser.username,
@@ -175,9 +167,9 @@ export const generateSystemToken = async (req: Request, res: Response): Promise<
             },
         });
     } catch (error) {
-        console.error("Erreur génération token système:", error);
+        console.error('Erreur génération token système:', error);
         res.status(500).json({
-            message: "Erreur lors de la génération du token système",
+            message: 'Erreur lors de la génération du token système',
             error: (error as Error).message,
         });
     }
@@ -191,9 +183,9 @@ export const generateSystemToken = async (req: Request, res: Response): Promise<
 function extractEmailFromIdToken(idToken: string): string | null {
     try {
         // Le JWT est composé de 3 parties séparées par des points
-        const payload = idToken.split(".")[1];
+        const payload = idToken.split('.')[1];
         // Décoder le payload base64
-        const decoded = JSON.parse(Buffer.from(payload, "base64").toString());
+        const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
         return decoded.email || null;
     } catch {
         return null;
@@ -204,21 +196,18 @@ function extractEmailFromIdToken(idToken: string): string | null {
 async function getMicrosoftToken(
     code: string
 ): Promise<{ access_token: string; id_token: string }> {
-    const response = await fetch(
-        "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                client_id: MICROSOFT_CLIENT_ID,
-                client_secret: MICROSOFT_CLIENT_SECRET,
-                code: code,
-                redirect_uri: REDIRECT_URI,
-                grant_type: "authorization_code",
-                scope: "XboxLive.signin offline_access openid email profile",
-            }),
-        }
-    );
+    const response = await fetch('https://login.microsoftonline.com/consumers/oauth2/v2.0/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            client_id: MICROSOFT_CLIENT_ID,
+            client_secret: MICROSOFT_CLIENT_SECRET,
+            code: code,
+            redirect_uri: REDIRECT_URI,
+            grant_type: 'authorization_code',
+            scope: 'XboxLive.signin offline_access openid email profile',
+        }),
+    });
 
     if (!response.ok) {
         const error = await response.text();
@@ -232,25 +221,22 @@ async function getMicrosoftToken(
 async function getXboxLiveToken(
     microsoftAccessToken: string
 ): Promise<{ Token: string; DisplayClaims: { xui: [{ uhs: string }] } }> {
-    const response = await fetch(
-        "https://user.auth.xboxlive.com/user/authenticate",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
+    const response = await fetch('https://user.auth.xboxlive.com/user/authenticate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+        },
+        body: JSON.stringify({
+            Properties: {
+                AuthMethod: 'RPS',
+                SiteName: 'user.auth.xboxlive.com',
+                RpsTicket: `d=${microsoftAccessToken}`,
             },
-            body: JSON.stringify({
-                Properties: {
-                    AuthMethod: "RPS",
-                    SiteName: "user.auth.xboxlive.com",
-                    RpsTicket: `d=${microsoftAccessToken}`,
-                },
-                RelyingParty: "http://auth.xboxlive.com",
-                TokenType: "JWT",
-            }),
-        }
-    );
+            RelyingParty: 'http://auth.xboxlive.com',
+            TokenType: 'JWT',
+        }),
+    });
 
     if (!response.ok) {
         const error = await response.text();
@@ -264,24 +250,21 @@ async function getXboxLiveToken(
 async function getXSTSToken(
     xboxToken: string
 ): Promise<{ Token: string; DisplayClaims: { xui: [{ uhs: string }] } }> {
-    const response = await fetch(
-        "https://xsts.auth.xboxlive.com/xsts/authorize",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
+    const response = await fetch('https://xsts.auth.xboxlive.com/xsts/authorize', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+        },
+        body: JSON.stringify({
+            Properties: {
+                SandboxId: 'RETAIL',
+                UserTokens: [xboxToken],
             },
-            body: JSON.stringify({
-                Properties: {
-                    SandboxId: "RETAIL",
-                    UserTokens: [xboxToken],
-                },
-                RelyingParty: "rp://api.minecraftservices.com/",
-                TokenType: "JWT",
-            }),
-        }
-    );
+            RelyingParty: 'rp://api.minecraftservices.com/',
+            TokenType: 'JWT',
+        }),
+    });
 
     if (!response.ok) {
         const error = await response.text();
@@ -301,10 +284,10 @@ async function getMinecraftProfile(xstsData: {
 
     // 1. D'abord, obtenir le token Minecraft
     const mcAuthResponse = await fetch(
-        "https://api.minecraftservices.com/authentication/login_with_xbox",
+        'https://api.minecraftservices.com/authentication/login_with_xbox',
         {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 identityToken: `XBL3.0 x=${uhs};${xstsToken}`,
             }),
@@ -319,14 +302,11 @@ async function getMinecraftProfile(xstsData: {
     const mcAuth = await mcAuthResponse.json();
 
     // 2. Récupérer le profil avec le token Minecraft
-    const profileResponse = await fetch(
-        "https://api.minecraftservices.com/minecraft/profile",
-        {
-            headers: {
-                Authorization: `Bearer ${mcAuth.access_token}`,
-            },
-        }
-    );
+    const profileResponse = await fetch('https://api.minecraftservices.com/minecraft/profile', {
+        headers: {
+            Authorization: `Bearer ${mcAuth.access_token}`,
+        },
+    });
 
     if (!profileResponse.ok) {
         const error = await profileResponse.text();

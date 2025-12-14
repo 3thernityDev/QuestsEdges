@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
-import prisma from "../config/bdd";
+import { NextFunction, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import prisma from '../config/bdd';
 
 export const isAuthenticated = async (
     req: Request,
@@ -10,13 +10,13 @@ export const isAuthenticated = async (
     // 1. Récupérer le header Authorization
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        res.status(401).json({ message: "Accès refusé: token manquant" });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({ message: 'Accès refusé: token manquant' });
         return;
     }
 
     // 2. Extraire le token (enlever "Bearer ")
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(' ')[1];
 
     try {
         // 3. Vérifier et décoder le token
@@ -30,7 +30,7 @@ export const isAuthenticated = async (
         });
 
         if (!user) {
-            res.status(401).json({ message: "Utilisateur non trouvé" });
+            res.status(401).json({ message: 'Utilisateur non trouvé' });
             return;
         }
 
@@ -38,25 +38,21 @@ export const isAuthenticated = async (
         req.user = user;
 
         next();
-    } catch (error) {
-        res.status(401).json({ message: "Token invalide" });
+    } catch {
+        res.status(401).json({ message: 'Token invalide' });
         return;
     }
 };
 
 // Middleware: Vérifie si l'utilisateur est admin
-export const isAdmin = (
-    req: Request,
-    res: Response,
-    next: NextFunction
-): void => {
+export const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-        res.status(401).json({ message: "Non authentifié" });
+        res.status(401).json({ message: 'Non authentifié' });
         return;
     }
 
-    if (req.user.role !== "admin") {
-        res.status(403).json({ message: "Accès refusé: admin requis" });
+    if (req.user.role !== 'admin') {
+        res.status(403).json({ message: 'Accès refusé: admin requis' });
         return;
     }
 
@@ -64,18 +60,14 @@ export const isAdmin = (
 };
 
 // Middleware: Vérifie si c'est le système (plugin MC)
-export const isSystem = (
-    req: Request,
-    res: Response,
-    next: NextFunction
-): void => {
+export const isSystem = (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-        res.status(401).json({ message: "Non authentifié" });
+        res.status(401).json({ message: 'Non authentifié' });
         return;
     }
 
-    if (req.user.role !== "sys") {
-        res.status(403).json({ message: "Accès refusé: système requis" });
+    if (req.user.role !== 'sys') {
+        res.status(403).json({ message: 'Accès refusé: système requis' });
         return;
     }
 
@@ -83,18 +75,14 @@ export const isSystem = (
 };
 
 // Middleware: Vérifie si admin OU système
-export const isAdminOrSystem = (
-    req: Request,
-    res: Response,
-    next: NextFunction
-): void => {
+export const isAdminOrSystem = (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-        res.status(401).json({ message: "Non authentifié" });
+        res.status(401).json({ message: 'Non authentifié' });
         return;
     }
 
-    if (req.user.role !== "admin" && req.user.role !== "sys") {
-        res.status(403).json({ message: "Accès refusé: admin ou système requis" });
+    if (req.user.role !== 'admin' && req.user.role !== 'sys') {
+        res.status(403).json({ message: 'Accès refusé: admin ou système requis' });
         return;
     }
 
