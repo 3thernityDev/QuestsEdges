@@ -11,5 +11,8 @@ export const updateNotificationSchema = z.object({
     message: z.string().optional(),
 });
 
+// Alias pour compatibilité avec les tests
+export { createNotificationSchema as notificationSchema };
+
 export type CreateNotificationInput = z.infer<typeof createNotificationSchema>;
 export type UpdateNotificationInput = z.infer<typeof updateNotificationSchema>;

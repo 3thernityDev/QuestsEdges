@@ -81,6 +81,8 @@ export const findById = async (id: number) => {
         },
     });
 };
+// Alias pour compatibilité avec les tests
+export const getProgressById = findById;
 
 // Récupérer ou créer une progression pour un user/task
 export const findOrCreate = async (userId: number, taskId: number) => {

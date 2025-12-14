@@ -25,6 +25,9 @@ export const findById = async (id: number) => {
     });
 };
 
+// Alias pour compatibilité avec les tests
+export const getNotificationById = findById;
+
 // Créer une notification
 export const create = async (data: CreateNotificationInput) => {
     return prisma.notifications.create({

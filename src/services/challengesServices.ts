@@ -11,6 +11,9 @@ export const findChallengeById = async (id: number) => {
     });
 };
 
+// Alias pour compatibilité avec les tests
+export const getChallengeById = findChallengeById;
+
 export const findActiveChallenges = async () => {
     return prisma.challenges.findMany({
         where: {

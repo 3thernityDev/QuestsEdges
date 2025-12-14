@@ -15,6 +15,9 @@ export const incrementProgressSchema = z.object({
     amount: z.number().int().min(1).default(1),
 });
 
+// Alias pour compatibilité avec les tests
+export { updateProgressSchema as progressSchema };
+
 // ========================
 // ======= TYPES ==========
 // ========================
