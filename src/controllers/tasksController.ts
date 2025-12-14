@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import * as tasksServices from '../services/tasksServices';
 import { findChallengeById } from '../services/challengesServices';
 import { createTaskSchema, updateTaskSchema } from '../schemas/taskSchema';
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client-runtime-utils';
 
 // ========================
 // === TASKS CONTROLLER ===
@@ -77,7 +77,7 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
         const task = await tasksServices.create(challengeId, parsed.data);
         res.status(201).json(task);
     } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error instanceof PrismaClientKnownRequestError) {
             // Erreur de clé étrangère (action n'existe pas)
             if (error.code === 'P2003') {
                 res.status(400).json({ message: "L'action spécifiée n'existe pas" });
@@ -116,7 +116,7 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
         }
         res.json(task);
     } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error instanceof PrismaClientKnownRequestError) {
             if (error.code === 'P2003') {
                 res.status(400).json({ message: "L'action spécifiée n'existe pas" });
                 return;

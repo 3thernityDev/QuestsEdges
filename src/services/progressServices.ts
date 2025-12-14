@@ -181,13 +181,13 @@ export const checkChallengeCompletion = async (userId: number, challengeId: numb
     const progressList = await prisma.challengeProgress.findMany({
         where: {
             userId,
-            taskId: { in: tasks.map((t) => t.id) },
+            taskId: { in: tasks.map((t: { id: number }) => t.id) },
         },
     });
 
     // Vérifier que toutes les tâches sont complétées
-    return tasks.every((task) => {
-        const progress = progressList.find((p) => p.taskId === task.id);
+    return tasks.every((task: { id: number }) => {
+        const progress = progressList.find((p: { taskId: number; completed?: boolean }) => p.taskId === task.id);
         return progress?.completed === true;
     });
 };
