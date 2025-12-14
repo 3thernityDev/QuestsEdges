@@ -17,6 +17,9 @@ export const createActionSchema = z.object({
 // Schéma pour update (tous les champs optionnels)
 export const updateActionSchema = createActionSchema.partial();
 
+// Alias pour compatibilité avec les tests
+export { createActionSchema as actionSchema };
+
 // ========================
 // ======= TYPES ==========
 // ========================

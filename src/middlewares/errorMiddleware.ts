@@ -44,6 +44,8 @@ export const errorHandler = (
         ...(isProduction ? {} : { stack: err.stack }),
     });
 };
+// Export par défaut pour compatibilité avec les tests
+export default errorHandler;
 
 // Middleware pour les routes non trouvees (404)
 export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {

@@ -12,5 +12,8 @@ export const updateBadgeSchema = z.object({
     criteria: z.record(z.string(), z.any()).optional(),
 });
 
+// Alias pour compatibilité avec les tests
+export { createBadgeSchema as badgeSchema };
+
 export type CreateBadgeInput = z.infer<typeof createBadgeSchema>;
 export type UpdateBadgeInput = z.infer<typeof updateBadgeSchema>;

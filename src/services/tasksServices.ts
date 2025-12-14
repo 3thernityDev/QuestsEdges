@@ -29,6 +29,9 @@ export const findById = async (challengeId: number, taskId: number) => {
     });
 };
 
+// Alias pour compatibilité avec les tests
+export const getTaskById = findById;
+
 // Créer une nouvelle tâche pour un challenge
 export const create = async (challengeId: number, data: CreateTaskInput) => {
     return prisma.challengeTasks.create({

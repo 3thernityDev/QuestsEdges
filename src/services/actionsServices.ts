@@ -11,6 +11,9 @@ export const findActionById = async (id: number) => {
     });
 };
 
+// Alias pour compatibilité avec les tests
+export const getActionById = findActionById;
+
 export const findActionByName = async (name: string) => {
     return prisma.actions.findUnique({
         where: { name },

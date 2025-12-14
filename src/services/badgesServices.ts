@@ -36,6 +36,9 @@ export const findBadgeById = async (id: number) => {
     });
 };
 
+// Alias pour compatibilité avec les tests
+export const getBadgeById = findBadgeById;
+
 // Créer un badge
 export const createBadge = async (data: CreateBadgeInput) => {
     return prisma.badges.create({

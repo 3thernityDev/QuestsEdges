@@ -14,6 +14,9 @@ export const createTaskSchema = z.object({
 // Schéma pour update (tous les champs optionnels)
 export const updateTaskSchema = createTaskSchema.partial();
 
+// Alias pour compatibilité avec les tests
+export { createTaskSchema as taskSchema };
+
 // ========================
 // ======= TYPES ==========
 // ========================
