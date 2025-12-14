@@ -1,13 +1,18 @@
 name: CI/CD - Production
 
 on:
+  release:
+    types: [created]
   push:
     branches:
       - main
       - test/workflow
     tags:
-      - 'v*'
-      - 'V.*.*.*-beta'
+      - 'V*'
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   test:

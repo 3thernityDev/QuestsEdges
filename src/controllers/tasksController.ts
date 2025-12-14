@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import * as tasksServices from '../services/tasksServices';
 import { findChallengeById } from '../services/challengesServices';
 import { createTaskSchema, updateTaskSchema } from '../schemas/taskSchema';
-import { Prisma } from '../generated/prisma/client';
+import { Prisma } from '@prisma/client';
 
 // ========================
 // === TASKS CONTROLLER ===
