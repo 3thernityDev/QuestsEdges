@@ -187,7 +187,9 @@ export const checkChallengeCompletion = async (userId: number, challengeId: numb
 
     // Vérifier que toutes les tâches sont complétées
     return tasks.every((task: { id: number }) => {
-        const progress = progressList.find((p: { taskId: number; completed?: boolean }) => p.taskId === task.id);
+        const progress = progressList.find(
+            (p: { taskId: number; completed?: boolean }) => p.taskId === task.id
+        );
         return progress?.completed === true;
     });
 };
