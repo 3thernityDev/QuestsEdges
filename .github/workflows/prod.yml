@@ -38,6 +38,10 @@ jobs:
       - name: Check Prettier formatting
         run: npm run format:check
 
+
+      - name: Generate Prisma client (types only)
+        run: npx prisma generate
+
       - name: TypeScript type check
         run: npm run typecheck
 
