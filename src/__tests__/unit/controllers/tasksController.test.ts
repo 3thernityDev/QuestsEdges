@@ -21,7 +21,7 @@ const createMockResponse = (): Partial<Response> => {
 };
 
 describe('TasksController', () => {
-    test('doit retourner 400 si l\'ID est manquant', async () => {
+    test("doit retourner 400 si l'ID est manquant", async () => {
         const req = createMockRequest({}) as Request;
         const res = createMockResponse() as Response;
         await tasksController.getTaskById(req, res);

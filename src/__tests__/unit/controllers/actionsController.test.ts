@@ -21,7 +21,7 @@ const createMockResponse = (): Partial<Response> => {
 };
 
 describe('ActionsController', () => {
-    test('doit retourner 400 si l\'ID est invalide', async () => {
+    test("doit retourner 400 si l'ID est invalide", async () => {
         const req = createMockRequest({ id: 'abc' }) as Request;
         const res = createMockResponse() as Response;
         await actionsController.getActionById(req, res);

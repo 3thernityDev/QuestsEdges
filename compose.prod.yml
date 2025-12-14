@@ -1,67 +1,75 @@
 services:
-  api:
-    container_name: questsedges-api
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        DATABASE_URL: ${DATABASE_URL}
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - DATABASE_URL=${DATABASE_URL}
-      - DATABASE_HOST=${DATABASE_HOST}
-      - DATABASE_PORT=${DATABASE_PORT}
-      - DATABASE_USER=${DATABASE_USER}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_NAME=${DATABASE_NAME}
-      - JWT_SECRET=${JWT_SECRET}
-      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
-      - AZURE_SECRET=${AZURE_SECRET}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
-      - REDIRECT_URI=${REDIRECT_URI}
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - questsedges-net
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    api:
+        container_name: questsedges-api
+        build:
+            context: .
+            dockerfile: Dockerfile
+            args:
+                DATABASE_URL: ${DATABASE_URL}
+        restart: unless-stopped
+        ports:
+            - '3000:3000'
+        environment:
+            - NODE_ENV=production
+            - PORT=3000
+            - DATABASE_URL=${DATABASE_URL}
+            - DATABASE_HOST=${DATABASE_HOST}
+            - DATABASE_PORT=${DATABASE_PORT}
+            - DATABASE_USER=${DATABASE_USER}
+            - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+            - DATABASE_NAME=${DATABASE_NAME}
+            - JWT_SECRET=${JWT_SECRET}
+            - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+            - AZURE_SECRET=${AZURE_SECRET}
+            - FRONTEND_URL=${FRONTEND_URL}
+            - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+            - REDIRECT_URI=${REDIRECT_URI}
+        depends_on:
+            db:
+                condition: service_healthy
+        networks:
+            - questsedges-net
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'wget',
+                    '--no-verbose',
+                    '--tries=1',
+                    '--spider',
+                    'http://localhost:3000/health',
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
 
-  db:
-    container_name: questsedges-db
-    image: mariadb:latest
-    restart: unless-stopped
-    environment:
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-    ports:
-      - "${MARIADB_PORT:-3306}:3306"
-    volumes:
-      - db_data:/var/lib/mysql:Z
-    networks:
-      - questsedges-net
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+    db:
+        container_name: questsedges-db
+        image: mariadb:latest
+        restart: unless-stopped
+        environment:
+            MARIADB_USER: ${MARIADB_USER}
+            MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+            MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+            MARIADB_DATABASE: ${MARIADB_DATABASE}
+        ports:
+            - '${MARIADB_PORT:-3306}:3306'
+        volumes:
+            - db_data:/var/lib/mysql:Z
+        networks:
+            - questsedges-net
+        healthcheck:
+            test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
 
 volumes:
-  db_data:
-    driver: local
+    db_data:
+        driver: local
 
 networks:
-  questsedges-net:
-    name: questsedges-net
+    questsedges-net:
+        name: questsedges-net
