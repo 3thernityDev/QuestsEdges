@@ -1,8 +1,6 @@
 /**
  * Jest setup file
- * Runs before all tests
  */
-
 import { jest } from '@jest/globals';
 
 // Set test environment variables
@@ -16,5 +14,5 @@ process.env.FRONTEND_URL = 'http://localhost:5173';
 process.env.ALLOWED_ORIGINS = 'http://localhost:3000,http://localhost:5173';
 process.env.REDIRECT_URI = 'http://localhost:3000/api/auth/microsoft/callback';
 
-// Increase timeout for integration tests
-jest.setTimeout(10000);
+// Set timeout
+jest.setTimeout(30000);

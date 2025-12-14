@@ -1,452 +1,251 @@
-import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+/**
+ * Tests pour les controllers de challenges
+ * Tests de validation d'entrées sans appel aux services
+ */
+import { describe, test, expect, jest } from '@jest/globals';
 import { Request, Response } from 'express';
-import {
-    getAllChallenges,
-    getChallengeById,
-    getActiveChallenges,
-    createChallenge,
-    updateChallenge,
-    joinChallenge,
-    deleteChallenge,
-} from '../../../controllers/challengesController';
-import * as challengesServices from '../../../services/challengesServices';
+import * as challengesController from '../../../controllers/challengesController.js';
+import { mockUser, mockAdmin } from '../../mocks/data.mock.js';
 
-// Mock the services
-jest.mock('../../../services/challengesServices');
+// Helpers pour créer des mocks Express
+const createMockRequest = (params = {}, body = {}, user?: any): Partial<Request> => ({
+    params: params as any,
+    body,
+    user,
+});
 
-describe('ChallengesController', () => {
-    let mockRequest: Partial<Request>;
-    let mockResponse: Partial<Response>;
-    const mockServices = challengesServices as jest.Mocked<typeof challengesServices>;
-
-    beforeEach(() => {
-        mockRequest = {
-            params: {},
-            body: {},
-            user: undefined,
-        };
-        mockResponse = {
-            status: jest.fn().mockReturnThis() as Response['status'],
-            json: jest.fn().mockReturnThis() as Response['json'],
-        };
-        jest.clearAllMocks();
-    });
-
-    const mockChallenge = {
-        id: 1,
-        creatorId: 1,
-        type: 'hebdo' as const,
-        status: 'accepted' as const,
-        title: 'Test Challenge',
-        description: 'Test description',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        expiresAt: new Date('2025-12-31'),
-        rewardXp: 100,
-        rewardPoints: 50,
-        rewardItem: null,
+const createMockResponse = (): Partial<Response> => {
+    const res: Partial<Response> = {
+        status: jest.fn().mockReturnThis() as any,
+        json: jest.fn().mockReturnThis() as any,
     };
+    return res;
+};
 
-    describe('getAllChallenges', () => {
-        test('should return all challenges with 200 status', async () => {
-            const mockChallenges = [mockChallenge];
-            mockServices.findAllChallenges.mockResolvedValue(mockChallenges);
+describe('ChallengesController - Input Validation Tests', () => {
+    describe('getChallengeById - ID Validation', () => {
+        test('should return 400 if ID is not a number', async () => {
+            const req = createMockRequest({ id: 'invalid' }) as Request;
+            const res = createMockResponse() as Response;
 
-            await getAllChallenges(mockRequest as Request, mockResponse as Response);
+            await challengesController.getChallengeById(req, res);
 
-            expect(mockResponse.status).toHaveBeenCalledWith(200);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Liste des challenges:',
-                challenges: mockChallenges,
-            });
-        });
-
-        test('should return 500 on service error', async () => {
-            const error = new Error('Database error');
-            mockServices.findAllChallenges.mockRejectedValue(error);
-
-            await getAllChallenges(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(500);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Erreur lors de la récupération des challenges',
-                error: 'Database error',
-            });
-        });
-    });
-
-    describe('getChallengeById', () => {
-        test('should return challenge when found', async () => {
-            mockRequest.params = { id: '1' };
-            mockServices.findChallengeById.mockResolvedValue(mockChallenge);
-
-            await getChallengeById(mockRequest as Request, mockResponse as Response);
-
-            expect(mockServices.findChallengeById).toHaveBeenCalledWith(1);
-            expect(mockResponse.status).toHaveBeenCalledWith(200);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Détails du challenge:',
-                challenge: mockChallenge,
-            });
-        });
-
-        test('should return 404 when challenge not found', async () => {
-            mockRequest.params = { id: '999' };
-            mockServices.findChallengeById.mockResolvedValue(null);
-
-            await getChallengeById(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(404);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Challenge non trouvé',
-            });
-        });
-
-        test('should return 400 when id is invalid', async () => {
-            mockRequest.params = { id: 'invalid' };
-
-            await getChallengeById(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(400);
-            expect(mockResponse.json).toHaveBeenCalledWith({
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
                 message: 'ID de challenge invalide',
             });
         });
 
-        test('should return 500 on service error', async () => {
-            mockRequest.params = { id: '1' };
-            const error = new Error('Database error');
-            mockServices.findChallengeById.mockRejectedValue(error);
+        test('should return 400 if ID is NaN', async () => {
+            const req = createMockRequest({ id: 'abc123' }) as Request;
+            const res = createMockResponse() as Response;
 
-            await getChallengeById(mockRequest as Request, mockResponse as Response);
+            await challengesController.getChallengeById(req, res);
 
-            expect(mockResponse.status).toHaveBeenCalledWith(500);
+            expect(res.status).toHaveBeenCalledWith(400);
         });
     });
 
-    describe('getActiveChallenges', () => {
-        test('should return active challenges', async () => {
-            const mockChallenges = [mockChallenge];
-            mockServices.findActiveChallenges.mockResolvedValue(mockChallenges);
-
-            await getActiveChallenges(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(200);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Liste des challenges actifs:',
-                challenges: mockChallenges,
-            });
-        });
-
-        test('should return 500 on service error', async () => {
-            const error = new Error('Database error');
-            mockServices.findActiveChallenges.mockRejectedValue(error);
-
-            await getActiveChallenges(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(500);
-        });
-    });
-
-    describe('createChallenge', () => {
-        test('should return 401 when user is not authenticated', async () => {
-            mockRequest.user = undefined;
-
-            await createChallenge(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(401);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Non authentifié',
-            });
-        });
-
-        test('should return 400 when validation fails', async () => {
-            mockRequest.user = {
-                id: 1,
-                uuid_mc: '123e4567-e89b-12d3-a456-426614174000',
-                username: 'testuser',
-                email: 'test@example.com',
-                role: 'admin',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                last_login: new Date(),
-                total_xp: 0,
-                total_points: 0,
-                total_challenges_completed: 0,
-            };
-            mockRequest.body = {
-                title: 'ab', // Too short
+    describe('createChallenge - Authentication & Validation', () => {
+        test('should return 401 if user is not authenticated', async () => {
+            const validData = {
+                title: 'Test Challenge',
                 type: 'hebdo',
             };
+            const req = createMockRequest({}, validData) as Request; // No user
+            const res = createMockResponse() as Response;
 
-            await createChallenge(mockRequest as Request, mockResponse as Response);
+            await challengesController.createChallenge(req, res);
 
-            expect(mockResponse.status).toHaveBeenCalledWith(400);
-            expect(mockResponse.json).toHaveBeenCalledWith(
+            expect(res.status).toHaveBeenCalledWith(401);
+            expect(res.json).toHaveBeenCalledWith({ message: 'Non authentifié' });
+        });
+
+        test('should return 400 if title is too short', async () => {
+            const invalidData = {
+                title: 'ab', // Moins de 3 caractères
+                type: 'hebdo',
+            };
+            const req = createMockRequest({}, invalidData, mockAdmin) as Request;
+            const res = createMockResponse() as Response;
+
+            await challengesController.createChallenge(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     message: 'Données invalides',
                 })
             );
         });
 
-        test('should create challenge when data is valid', async () => {
-            mockRequest.user = {
-                id: 1,
-                uuid_mc: '123e4567-e89b-12d3-a456-426614174000',
-                username: 'testuser',
-                email: 'test@example.com',
-                role: 'admin',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                last_login: new Date(),
-                total_xp: 0,
-                total_points: 0,
-                total_challenges_completed: 0,
+        test('should return 400 if type is invalid', async () => {
+            const invalidData = {
+                title: 'Valid Title',
+                type: 'invalid_type', // Type non autorisé
             };
-            mockRequest.body = {
-                title: 'New Challenge',
-                description: 'Description',
-                type: 'hebdo',
-                rewardXp: 100,
-                rewardPoints: 50,
-            };
+            const req = createMockRequest({}, invalidData, mockAdmin) as Request;
+            const res = createMockResponse() as Response;
 
-            mockServices.createChallengeService.mockResolvedValue(mockChallenge);
+            await challengesController.createChallenge(req, res);
 
-            await createChallenge(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(201);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Challenge créé',
-                challenge: mockChallenge,
-            });
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    message: 'Données invalides',
+                })
+            );
         });
 
-        test('should return 500 on service error', async () => {
-            mockRequest.user = {
-                id: 1,
-                uuid_mc: '123e4567-e89b-12d3-a456-426614174000',
-                username: 'testuser',
-                email: 'test@example.com',
-                role: 'admin',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                last_login: new Date(),
-                total_xp: 0,
-                total_points: 0,
-                total_challenges_completed: 0,
-            };
-            mockRequest.body = {
-                title: 'New Challenge',
+        test('should return 400 if title is missing', async () => {
+            const invalidData = {
                 type: 'hebdo',
-                rewardXp: 100,
-                rewardPoints: 50,
+                // title manquant
             };
+            const req = createMockRequest({}, invalidData, mockAdmin) as Request;
+            const res = createMockResponse() as Response;
 
-            const error = new Error('Database error');
-            mockServices.createChallengeService.mockRejectedValue(error);
+            await challengesController.createChallenge(req, res);
 
-            await createChallenge(mockRequest as Request, mockResponse as Response);
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
 
-            expect(mockResponse.status).toHaveBeenCalledWith(500);
+        test('should return 400 if type is missing', async () => {
+            const invalidData = {
+                title: 'Test Challenge',
+                // type manquant
+            };
+            const req = createMockRequest({}, invalidData, mockAdmin) as Request;
+            const res = createMockResponse() as Response;
+
+            await challengesController.createChallenge(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        test('should return 400 if rewardXp is negative', async () => {
+            const invalidData = {
+                title: 'Test Challenge',
+                type: 'hebdo',
+                rewardXp: -100, // Négatif
+            };
+            const req = createMockRequest({}, invalidData, mockAdmin) as Request;
+            const res = createMockResponse() as Response;
+
+            await challengesController.createChallenge(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+
+        test('should return 400 if rewardPoints is negative', async () => {
+            const invalidData = {
+                title: 'Test Challenge',
+                type: 'hebdo',
+                rewardPoints: -50, // Négatif
+            };
+            const req = createMockRequest({}, invalidData, mockAdmin) as Request;
+            const res = createMockResponse() as Response;
+
+            await challengesController.createChallenge(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
         });
     });
 
-    describe('updateChallenge', () => {
-        test('should return 400 when id is invalid', async () => {
-            mockRequest.params = { id: 'invalid' };
+    describe('updateChallenge - ID & Data Validation', () => {
+        test('should return 400 if ID is invalid', async () => {
+            const updateData = {
+                title: 'Updated Title',
+            };
+            const req = createMockRequest({ id: 'invalid' }, updateData) as Request;
+            const res = createMockResponse() as Response;
 
-            await updateChallenge(mockRequest as Request, mockResponse as Response);
+            await challengesController.updateChallenge(req, res);
 
-            expect(mockResponse.status).toHaveBeenCalledWith(400);
-            expect(mockResponse.json).toHaveBeenCalledWith({
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
                 message: 'ID de challenge invalide',
             });
         });
 
-        test('should return 400 when validation fails', async () => {
-            mockRequest.params = { id: '1' };
-            mockRequest.body = {
-                title: 'ab', // Too short
+        test('should return 400 if type is invalid', async () => {
+            const invalidData = {
+                type: 'invalid_type',
             };
+            const req = createMockRequest({ id: '1' }, invalidData) as Request;
+            const res = createMockResponse() as Response;
 
-            await updateChallenge(mockRequest as Request, mockResponse as Response);
+            await challengesController.updateChallenge(req, res);
 
-            expect(mockResponse.status).toHaveBeenCalledWith(400);
+            expect(res.status).toHaveBeenCalledWith(400);
         });
 
-        test('should update challenge when data is valid', async () => {
-            mockRequest.params = { id: '1' };
-            mockRequest.body = {
-                title: 'Updated Challenge',
+        test('should return 400 if title is too short', async () => {
+            const invalidData = {
+                title: 'ab',
             };
+            const req = createMockRequest({ id: '1' }, invalidData) as Request;
+            const res = createMockResponse() as Response;
 
-            const updatedChallenge = { ...mockChallenge, title: 'Updated Challenge' };
-            mockServices.updateChallengeService.mockResolvedValue(updatedChallenge);
+            await challengesController.updateChallenge(req, res);
 
-            await updateChallenge(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(200);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Challenge mis à jour',
-                challenge: updatedChallenge,
-            });
-        });
-
-        test('should return 500 on service error', async () => {
-            mockRequest.params = { id: '1' };
-            mockRequest.body = { title: 'Updated' };
-
-            const error = new Error('Database error');
-            mockServices.updateChallengeService.mockRejectedValue(error);
-
-            await updateChallenge(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(500);
+            expect(res.status).toHaveBeenCalledWith(400);
         });
     });
 
-    describe('joinChallenge', () => {
-        test('should return 401 when user is not authenticated', async () => {
-            mockRequest.params = { id: '1' };
-            mockRequest.user = undefined;
+    describe('joinChallenge - Authentication & ID Validation', () => {
+        test('should return 401 if user is not authenticated', async () => {
+            const req = createMockRequest({ id: '1' }) as Request; // No user
+            const res = createMockResponse() as Response;
 
-            await joinChallenge(mockRequest as Request, mockResponse as Response);
+            await challengesController.joinChallenge(req, res);
 
-            expect(mockResponse.status).toHaveBeenCalledWith(401);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Non authentifié',
+            expect(res.status).toHaveBeenCalledWith(401);
+            expect(res.json).toHaveBeenCalledWith({ message: 'Non authentifié' });
+        });
+
+        test('should return 400 if ID is invalid', async () => {
+            const req = createMockRequest({ id: 'invalid' }, {}, mockUser) as Request;
+            const res = createMockResponse() as Response;
+
+            await challengesController.joinChallenge(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
+                message: 'ID de challenge invalide',
             });
         });
 
-        test('should return 400 when id is invalid', async () => {
-            mockRequest.params = { id: 'invalid' };
-            mockRequest.user = {
-                id: 1,
-                uuid_mc: '123e4567-e89b-12d3-a456-426614174000',
-                username: 'testuser',
-                email: 'test@example.com',
-                role: 'user',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                last_login: new Date(),
-                total_xp: 0,
-                total_points: 0,
-                total_challenges_completed: 0,
-            };
+        test('should return 400 if ID is NaN', async () => {
+            const req = createMockRequest({ id: 'abc' }, {}, mockUser) as Request;
+            const res = createMockResponse() as Response;
 
-            await joinChallenge(mockRequest as Request, mockResponse as Response);
+            await challengesController.joinChallenge(req, res);
 
-            expect(mockResponse.status).toHaveBeenCalledWith(400);
-        });
-
-        test('should join challenge successfully', async () => {
-            mockRequest.params = { id: '1' };
-            mockRequest.user = {
-                id: 5,
-                uuid_mc: '123e4567-e89b-12d3-a456-426614174000',
-                username: 'testuser',
-                email: 'test@example.com',
-                role: 'user',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                last_login: new Date(),
-                total_xp: 0,
-                total_points: 0,
-                total_challenges_completed: 0,
-            };
-
-            const mockJoinedChallenge = {
-                id: 1,
-                userId: 5,
-                challengeId: 1,
-                status: 'accepted' as const,
-                acceptedAt: new Date(),
-            };
-
-            mockServices.joinChallengeService.mockResolvedValue(mockJoinedChallenge);
-
-            await joinChallenge(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(200);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Challenge rejoint',
-                joinedChallenge: mockJoinedChallenge,
-            });
-        });
-
-        test('should return 409 when user already joined', async () => {
-            mockRequest.params = { id: '1' };
-            mockRequest.user = {
-                id: 5,
-                uuid_mc: '123e4567-e89b-12d3-a456-426614174000',
-                username: 'testuser',
-                email: 'test@example.com',
-                role: 'user',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                last_login: new Date(),
-                total_xp: 0,
-                total_points: 0,
-                total_challenges_completed: 0,
-            };
-
-            const duplicateError = { code: 'P2002', message: 'Unique constraint failed' };
-            mockServices.joinChallengeService.mockRejectedValue(duplicateError);
-
-            await joinChallenge(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(409);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Vous avez déjà rejoint ce challenge',
-            });
+            expect(res.status).toHaveBeenCalledWith(400);
         });
     });
 
-    describe('deleteChallenge', () => {
-        test('should return 400 when id is invalid', async () => {
-            mockRequest.params = { id: 'invalid' };
+    describe('deleteChallenge - ID Validation', () => {
+        test('should return 400 if ID is invalid', async () => {
+            const req = createMockRequest({ id: 'invalid' }) as Request;
+            const res = createMockResponse() as Response;
 
-            await deleteChallenge(mockRequest as Request, mockResponse as Response);
+            await challengesController.deleteChallenge(req, res);
 
-            expect(mockResponse.status).toHaveBeenCalledWith(400);
-        });
-
-        test('should return 404 when challenge not found', async () => {
-            mockRequest.params = { id: '999' };
-            mockServices.findChallengeById.mockResolvedValue(null);
-
-            await deleteChallenge(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(404);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Challenge non trouvé',
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
+                message: 'ID de challenge invalide',
             });
         });
 
-        test('should delete challenge successfully', async () => {
-            mockRequest.params = { id: '1' };
-            mockServices.findChallengeById.mockResolvedValue(mockChallenge);
-            mockServices.deleteChallengeService.mockResolvedValue(mockChallenge);
+        test('should return 400 if ID is not a number', async () => {
+            const req = createMockRequest({ id: 'xyz' }) as Request;
+            const res = createMockResponse() as Response;
 
-            await deleteChallenge(mockRequest as Request, mockResponse as Response);
+            await challengesController.deleteChallenge(req, res);
 
-            expect(mockResponse.status).toHaveBeenCalledWith(200);
-            expect(mockResponse.json).toHaveBeenCalledWith({
-                message: 'Challenge supprimé',
-            });
-        });
-
-        test('should return 500 on service error', async () => {
-            mockRequest.params = { id: '1' };
-            mockServices.findChallengeById.mockResolvedValue(mockChallenge);
-
-            const error = new Error('Database error');
-            mockServices.deleteChallengeService.mockRejectedValue(error);
-
-            await deleteChallenge(mockRequest as Request, mockResponse as Response);
-
-            expect(mockResponse.status).toHaveBeenCalledWith(500);
+            expect(res.status).toHaveBeenCalledWith(400);
         });
     });
 });

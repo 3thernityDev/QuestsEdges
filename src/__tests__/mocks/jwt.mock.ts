@@ -1,36 +1,44 @@
+/**
+ * JWT Mock - Génération de tokens pour les tests
+ */
 import jwt from 'jsonwebtoken';
 
+// Payloads avec userId (pas id) pour correspondre au middleware
 export const mockJwtPayload = {
-    id: 1,
+    userId: 1,
     uuid_mc: '123e4567-e89b-12d3-a456-426614174000',
     role: 'user' as const,
 };
 
 export const mockAdminJwtPayload = {
-    id: 2,
+    userId: 2,
     uuid_mc: '223e4567-e89b-12d3-a456-426614174001',
     role: 'admin' as const,
 };
 
 export const mockSystemJwtPayload = {
-    id: 3,
-    uuid_mc: '00000000-0000-0000-0000-000000000000',
+    userId: 3,
+    uuid_mc: '323e4567-e89b-12d3-a456-426614174002',
     role: 'sys' as const,
 };
 
-type UserOrAdminPayload = typeof mockJwtPayload | typeof mockAdminJwtPayload;
-export const generateMockToken = (payload: UserOrAdminPayload = mockJwtPayload): string => {
+// Génère un token JWT valide pour les tests
+export const generateMockToken = (payload = mockJwtPayload): string => {
     return jwt.sign(payload, process.env.JWT_SECRET || 'test-secret', {
         expiresIn: '7d',
     });
 };
 
-export const generateExpiredToken = (): string => {
-    return jwt.sign(mockJwtPayload, process.env.JWT_SECRET || 'test-secret', {
-        expiresIn: '-1s', // Already expired
-    });
-};
+// Génère des headers d'authentification pour les requêtes
+export const getAuthHeaders = (isAdmin = false, isSystem = false) => {
+    let payload = mockJwtPayload;
+    if (isSystem) {
+        payload = mockSystemJwtPayload;
+    } else if (isAdmin) {
+        payload = mockAdminJwtPayload;
+    }
 
-export const generateInvalidToken = (): string => {
-    return 'invalid.jwt.token';
+    return {
+        Authorization: `Bearer ${generateMockToken(payload)}`,
+    };
 };
