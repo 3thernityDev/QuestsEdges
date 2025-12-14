@@ -24,6 +24,13 @@ export default tseslint.config(
             'no-console': ['warn', { allow: ['warn', 'error'] }],
         },
     },
+    // Règles spécifiques pour les fichiers de tests
+    {
+        files: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off', // Autorisé dans les tests pour les mocks
+        },
+    },
     {
         ignores: ['dist/**', 'node_modules/**', '*.js', '!eslint.config.js'],
     }

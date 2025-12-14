@@ -2,7 +2,7 @@
  * Tests pour les middlewares d'authentification
  * Tests de la logique pure sans connexion DB
  */
-import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+import { describe, test, expect, jest } from '@jest/globals';
 import { Request, Response, NextFunction } from 'express';
 import { isAdmin, isSystem, isAdminOrSystem } from '../../../middlewares/authMiddleware.js';
 import { mockUser, mockAdmin, mockSystem } from '../../mocks/data.mock.js';

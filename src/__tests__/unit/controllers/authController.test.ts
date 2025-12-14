@@ -5,7 +5,6 @@
 import { describe, test, expect, jest } from '@jest/globals';
 import { Request, Response } from 'express';
 import * as authController from '../../../controllers/authController.js';
-import { mockUser, mockAdmin } from '../../mocks/data.mock.js';
 
 const createMockRequest = (query = {}, user?: any): Partial<Request> => ({
     query: query as any,

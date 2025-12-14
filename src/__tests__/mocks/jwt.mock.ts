@@ -31,7 +31,8 @@ export const generateMockToken = (payload = mockJwtPayload): string => {
 
 // Génère des headers d'authentification pour les requêtes
 export const getAuthHeaders = (isAdmin = false, isSystem = false) => {
-    let payload = mockJwtPayload;
+    let payload: typeof mockJwtPayload | typeof mockAdminJwtPayload | typeof mockSystemJwtPayload =
+        mockJwtPayload;
     if (isSystem) {
         payload = mockSystemJwtPayload;
     } else if (isAdmin) {
@@ -39,6 +40,6 @@ export const getAuthHeaders = (isAdmin = false, isSystem = false) => {
     }
 
     return {
-        Authorization: `Bearer ${generateMockToken(payload)}`,
+        Authorization: `Bearer ${generateMockToken(payload as typeof mockJwtPayload)}`,
     };
 };

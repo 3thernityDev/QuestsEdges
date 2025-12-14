@@ -45,10 +45,7 @@ describe('UserController - Validation Tests', () => {
 
     describe('updateUser - ID Validation', () => {
         test('should return 400 if ID is invalid', async () => {
-            const req = createMockRequest(
-                { id: 'invalid' },
-                { username: 'newname' }
-            ) as Request;
+            const req = createMockRequest({ id: 'invalid' }, { username: 'newname' }) as Request;
             const res = createMockResponse() as Response;
 
             await userController.updateUser(req, res);

@@ -3,10 +3,7 @@
  * Ces tests ne nécessitent pas de base de données
  */
 import { describe, test, expect } from '@jest/globals';
-import {
-    createChallengeSchema,
-    updateChallengeSchema,
-} from '../../../schemas/challengeSchema.js';
+import { createChallengeSchema, updateChallengeSchema } from '../../../schemas/challengeSchema.js';
 
 describe('createChallengeSchema', () => {
     test('should validate a valid challenge object', () => {
