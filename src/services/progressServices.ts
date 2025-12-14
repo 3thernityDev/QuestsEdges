@@ -1,4 +1,4 @@
-import prisma from '../config/bdd';
+import prisma from 'src/config/bdd';
 import type { UpdateProgressInput } from '../schemas/progressSchema';
 
 // ========================

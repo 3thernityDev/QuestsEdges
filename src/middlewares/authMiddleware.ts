@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import prisma from '../config/bdd';
+import prisma from 'src/config/bdd';
 
 export const isAuthenticated = async (
     req: Request,

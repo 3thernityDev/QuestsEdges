@@ -4,6 +4,9 @@ export default {
     extensionsToTreatAsEsm: ['.ts'],
     moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1',
+        '^src/config/bdd$': '<rootDir>/src/__tests__/mocks/prisma.mock.ts',
+        '^@/config/bdd$': '<rootDir>/src/__tests__/mocks/prisma.mock.ts',
+        '^src/(.*)$': '<rootDir>/src/$1',
     },
     transform: {
         '^.+\\.ts$': [

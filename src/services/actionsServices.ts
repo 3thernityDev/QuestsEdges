@@ -1,4 +1,4 @@
-import prisma from '../config/bdd';
+import prisma from 'src/config/bdd';
 import { CreateActionInput, UpdateActionInput } from '../schemas/actionSchema';
 
 export const findAllActions = async () => {

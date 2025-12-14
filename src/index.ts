@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import helmet from 'helmet';
-import prisma from './config/bdd';
+import prisma from 'src/config/bdd';
 import corsMiddleware from './config/cors';
 import { globalLimiter } from './config/rateLimit';
 import { getEnv } from './config/env';
