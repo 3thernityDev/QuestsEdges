@@ -32,12 +32,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-
-      - name: Migrate database (test)
-        run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: 'mysql://test:test@localhost:3306/test_db'
-
       - name: Run ESLint
         run: npm run lint
 
