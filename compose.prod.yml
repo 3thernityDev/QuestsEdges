@@ -57,8 +57,18 @@ services:
             - '${MARIADB_PORT:-3306}:3306'
         volumes:
             - db_data:/var/lib/mysql:Z
+            - ./mariadb-custom.cnf:/etc/mysql/conf.d/custom.cnf:ro
         networks:
             - questsedges-net
+        # CORRECTION: Ajout des paramètres de connexion optimisés
+        command: >
+            --max-allowed-packet=64M
+            --wait-timeout=600
+            --interactive-timeout=600
+            --connect-timeout=60
+            --net-read-timeout=120
+            --net-write-timeout=120
+            --max-connections=200
         healthcheck:
             test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
             interval: 10s

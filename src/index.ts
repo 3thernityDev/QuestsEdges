@@ -22,6 +22,8 @@ const env = getEnv();
 const app = express();
 const PORT = env.PORT || 3000;
 
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
@@ -40,7 +42,8 @@ app.get('/health', async (req, res) => {
     try {
         await prisma.$connect();
         res.json({ status: 'ok', database: 'connected' });
-    } catch {
+    } catch (error) {
+        console.error('Health check failed:', error);
         res.status(500).json({ status: 'error', database: 'disconnected' });
     }
 });
@@ -61,7 +64,29 @@ app.use(notFoundHandler);
 // Gestion globale des erreurs
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+const gracefulShutdown = async (signal: string) => {
+    console.warn(`\n${signal} received. Starting graceful shutdown...`);
+
+    try {
+        await prisma.$disconnect();
+        console.warn('Database connections closed.');
+        process.exit(0);
+    } catch (error) {
+        console.error('Error during shutdown:', error);
+        process.exit(1);
+    }
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+const server = app.listen(PORT, () => {
     // eslint-disable-next-line no-console
     console.log(`Server running on port ${PORT}`);
 });
+
+// Augmenter les timeouts du serveur Node.js
+server.keepAliveTimeout = 65000; // 65 secondes
+server.headersTimeout = 66000; // 66 secondes
+
+export default app;
