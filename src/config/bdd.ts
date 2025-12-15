@@ -22,9 +22,6 @@ const adapter = new PrismaMariaDb({
     // Taille maximale des paquets (64MB)
     maxAllowedPacket: 67108864,
 
-    // Keep-alive pour maintenir les connexions actives
-    pingInterval: 30000, // 30 secondes
-
     // Timeouts de lecture/écriture réseau
     socketTimeout: 120000, // 2 minutes
 });
