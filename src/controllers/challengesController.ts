@@ -7,6 +7,11 @@ import {
     updateChallengeService,
     joinChallengeService,
     deleteChallengeService,
+    findChallengesWithTasks,
+    findUserChallenges,
+    leaveChallengeService,
+    getChallengeStats,
+    getUserChallengeStats,
 } from '../services/challengesServices';
 
 import { createChallengeSchema, updateChallengeSchema } from '../schemas/challengeSchema';
@@ -165,6 +170,132 @@ export const deleteChallenge = async (req: Request, res: Response): Promise<void
     } catch (error) {
         res.status(500).json({
             message: 'Erreur lors de la suppression du challenge',
+            error: (error as Error).message,
+        });
+    }
+};
+
+// ========================================
+// NOUVELLES FONCTIONS AJOUTÉES
+// ========================================
+
+/**
+ * GET /challenges/with-tasks?type=hebdo
+ * Récupère les défis avec leurs tâches et actions complètes
+ */
+export const getChallengesWithTasks = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const type = req.query.type as string | undefined;
+        const challenges = await findChallengesWithTasks(type);
+        res.status(200).json({
+            message: 'Liste des challenges avec tâches:',
+            challenges,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur lors de la récupération des challenges',
+            error: (error as Error).message,
+        });
+    }
+};
+
+/**
+ * GET /challenges/:id/stats
+ * Récupère les statistiques d'un défi
+ */
+export const getChallengeStatsController = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const challengeId = parseInt(req.params.id, 10);
+        if (isNaN(challengeId)) {
+            res.status(400).json({ message: 'ID de challenge invalide' });
+            return;
+        }
+
+        const stats = await getChallengeStats(challengeId);
+        res.status(200).json({
+            message: 'Statistiques du challenge:',
+            stats,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur lors de la récupération des statistiques',
+            error: (error as Error).message,
+        });
+    }
+};
+
+/**
+ * POST /challenges/:id/leave
+ * Permet à un utilisateur d'abandonner un défi
+ */
+export const leaveChallenge = async (req: Request, res: Response): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: 'Non authentifié' });
+            return;
+        }
+
+        const challengeId = parseInt(req.params.id, 10);
+        if (isNaN(challengeId)) {
+            res.status(400).json({ message: 'ID de challenge invalide' });
+            return;
+        }
+
+        await leaveChallengeService(req.user.id, challengeId);
+        res.status(200).json({
+            message: 'Vous avez abandonné le challenge',
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Erreur lors de l'abandon du challenge",
+            error: (error as Error).message,
+        });
+    }
+};
+
+/**
+ * GET /users/me/challenges/stats
+ * Récupère les statistiques de l'utilisateur connecté
+ */
+export const getMyStats = async (req: Request, res: Response): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: 'Non authentifié' });
+            return;
+        }
+
+        const stats = await getUserChallengeStats(req.user.id);
+        res.status(200).json({
+            message: 'Vos statistiques:',
+            stats,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur lors de la récupération des statistiques',
+            error: (error as Error).message,
+        });
+    }
+};
+
+/**
+ * GET /users/me/challenges
+ * Récupère tous les défis acceptés par l'utilisateur connecté
+ */
+export const getMyChallenges = async (req: Request, res: Response): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: 'Non authentifié' });
+            return;
+        }
+
+        const challenges = await findUserChallenges(req.user.id);
+        res.status(200).json({
+            message: 'Vos challenges:',
+            challenges,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Erreur lors de la récupération de vos challenges',
             error: (error as Error).message,
         });
     }
